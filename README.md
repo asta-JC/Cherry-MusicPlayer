@@ -95,6 +95,12 @@ A sleek, modern Android music player app built with **Jetpack Compose** and **Me
 
 ---
 
-## 🏷️ License & Author
+## 📄 License
 
-**Cherry Music Player // Asta v1.0**
+This project is developed as part of Asta's project series. Feel free to use and adapt for personal and educational use!
+
+---
+
+<p align="center">
+  Made with ❤️ & 🍒 by Asta
+</p>
