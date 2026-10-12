@@ -40,7 +40,19 @@ A sleek, modern Android music player app built with **Jetpack Compose** and **Me
 
 ---
 
-## 📱 Screenshots & UI Layout Structure
+## 📱 Screenshots
+
+<p align="center">
+  <img src="screenshots/library.jpg" width="250" alt="Library Screen" />
+  <img src="screenshots/playlists.jpg" width="250" alt="Playlists Screen" />
+  <img src="screenshots/settings.jpg" width="250" alt="Settings Screen" />
+</p>
+
+| Library | Playlists | Settings |
+|---|---|---|
+| Song list with search & sorting | Favorites & custom playlists | Glow, speed & equalizer |
+
+### UI Layout Structure
 
 ```
   ┌─────────────────────────────────────────────────────────────┐
@@ -71,8 +83,8 @@ A sleek, modern Android music player app built with **Jetpack Compose** and **Me
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/username/CherryMusicPlayer.git
-   cd CherryMusicPlayer
+   git clone https://github.com/asta-JC/Cherry-MusicPlayer.git
+   cd Cherry-MusicPlayer
    ```
 
 2. **Open in Android Studio**:
