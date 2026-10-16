@@ -8,7 +8,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -299,6 +301,7 @@ fun PlaylistDetailScreen(
     }
     val songs by songsFlow.collectAsState(initial = emptyList())
     val allSongs by libraryViewModel.uiState.collectAsState()
+    val playerUiState by playerViewModel.uiState.collectAsState()
 
     var showAddSongsDialog by remember { mutableStateOf(false) }
 
@@ -310,7 +313,7 @@ fun PlaylistDetailScreen(
                 title = { Text(playlistName, color = CherryTextPrimary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back", tint = CherryTextPrimary)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = CherryTextPrimary)
                     }
                 },
                 actions = {
@@ -334,14 +337,27 @@ fun PlaylistDetailScreen(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(songs) { song ->
-                        // Re-using SongItemCard or similar layout from LibraryScreen or inline card
+                    items(songs, key = { it.id }) { song ->
+                        val isPlaying = song.id == playerUiState.currentSong?.id
+                        val durationFormatted = remember(song.duration) {
+                            val minutes = (song.duration / 1000) / 60
+                            val seconds = (song.duration / 1000) % 60
+                            String.format("%d:%02d", minutes, seconds)
+                        }
+
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(14.dp))
+                                .border(
+                                    width = if (isPlaying) 1.5.dp else 1.dp,
+                                    color = if (isPlaying) CherryPrimary else CherryBorder,
+                                    shape = RoundedCornerShape(14.dp)
+                                )
                                 .clickable { playerViewModel.playSong(song, songs) },
-                            colors = CardDefaults.cardColors(containerColor = CherrySurface)
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isPlaying) CherryHighlight else CherrySurface
+                            )
                         ) {
                             Row(
                                 modifier = Modifier
@@ -350,35 +366,92 @@ fun PlaylistDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(CherryBackground),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (!song.albumArtUri.isNullOrEmpty()) {
+                                        coil.compose.AsyncImage(
+                                            model = song.albumArtUri,
+                                            contentDescription = song.album,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Rounded.MusicNote,
+                                            contentDescription = null,
+                                            tint = CherryPrimary,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+
+                                    if (isPlaying) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(CherryPrimary.copy(alpha = 0.3f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
+                                                contentDescription = "Playing",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Column(
+                                    modifier = Modifier.weight(1.5f),
+                                    verticalArrangement = Arrangement.Center
+                                ) {
                                     Text(
                                         text = song.title,
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Bold,
-                                        color = CherryTextPrimary,
-                                        maxLines = 1
+                                        color = if (isPlaying) CherryPrimary else CherryTextPrimary,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = song.artist,
+                                        text = "${song.artist} • ${song.album}",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = CherryTextSecondary,
-                                        maxLines = 1
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                 }
-                                IconButton(onClick = { playerViewModel.toggleFavorite(song) }) {
-                                    CherryIcon(
-                                        filled = song.isFavorite,
-                                        size = 24.dp
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = durationFormatted,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = CherryTextSecondary
                                     )
-                                }
-                                if (playlistId != null) {
-                                    IconButton(onClick = { playerViewModel.removeSongFromPlaylist(playlistId, song.id) }) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Delete,
-                                            contentDescription = "Remove",
-                                            tint = CherryTextSecondary
+                                    IconButton(onClick = { playerViewModel.toggleFavorite(song) }) {
+                                        CherryIcon(
+                                            filled = song.isFavorite,
+                                            size = 24.dp
                                         )
+                                    }
+                                    if (playlistId != null) {
+                                        IconButton(onClick = { playerViewModel.removeSongFromPlaylist(playlistId, song.id) }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Delete,
+                                                contentDescription = "Remove",
+                                                tint = CherryTextSecondary
+                                            )
+                                        }
                                     }
                                 }
                             }

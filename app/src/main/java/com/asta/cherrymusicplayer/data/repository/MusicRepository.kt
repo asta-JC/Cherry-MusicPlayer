@@ -44,7 +44,7 @@ class MusicRepository @Inject constructor(
     val favoriteSongs: Flow<List<SongEntity>> = musicDao.getFavoriteSongs()
     val allPlaylists: Flow<List<PlaylistEntity>> = musicDao.getAllPlaylists()
 
-    suspend fun scanDeviceAudio(minDurationMs: Long = 100_000L): List<SongEntity> = withContext(Dispatchers.IO) {
+    suspend fun scanDeviceAudio(minDurationMs: Long = 60_000L): List<SongEntity> = withContext(Dispatchers.IO) {
         val songs = mutableListOf<SongEntity>()
         val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
@@ -62,6 +62,10 @@ class MusicRepository @Inject constructor(
         // Filter: must be music AND at least minDurationMs long
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= $minDurationMs"
         val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
+
+        val supportedAudioFormats = setOf(
+            "mp3", "m4a", "flac", "wav", "ogg", "aac", "opus", "wma", "aiff", "alac", "mid", "midi", "mka"
+        )
 
         try {
             context.contentResolver.query(
@@ -95,7 +99,7 @@ class MusicRepository @Inject constructor(
 
                     val file = File(data)
                     val extension = file.extension.lowercase()
-                    if (data.isNotEmpty() && (extension in listOf("mp3", "m4a", "flac", "wav", "ogg") || file.exists())) {
+                    if (data.isNotEmpty() && (extension in supportedAudioFormats || file.exists())) {
                         val albumArtUri = ContentUris.withAppendedId(
                             Uri.parse("content://media/external/audio/albumart"),
                             albumId
@@ -110,6 +114,7 @@ class MusicRepository @Inject constructor(
                             data = data,
                             albumArtUri = albumArtUri,
                             isFavorite = false,
+                            isHidden = false,
                             dateAdded = if (dateAdded > 0) dateAdded else System.currentTimeMillis()
                         )
                         songs.add(song)
@@ -121,18 +126,30 @@ class MusicRepository @Inject constructor(
         }
 
         if (songs.isNotEmpty()) {
-            // Preserve existing favorite flags during re-scan
+            // Preserve existing favorite and hidden flags during re-scan
             val existingFavoriteIds = musicDao.getFavoriteIds().toSet()
+            val existingHiddenIds = musicDao.getHiddenIds().toSet()
             val songsToInsert = songs.map { song ->
+                var updated = song
                 if (song.id in existingFavoriteIds) {
-                    song.copy(isFavorite = true)
-                } else {
-                    song
+                    updated = updated.copy(isFavorite = true)
                 }
+                if (song.id in existingHiddenIds) {
+                    updated = updated.copy(isHidden = true)
+                }
+                updated
             }
             musicDao.insertSongs(songsToInsert)
         }
         songs
+    }
+
+    suspend fun hideSong(songId: Long) {
+        musicDao.setSongHidden(songId, true)
+    }
+
+    suspend fun unhideAllSongs() {
+        musicDao.unhideAllSongs()
     }
 
     fun getAlbumsFlow(): Flow<List<Album>> = flow {

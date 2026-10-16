@@ -14,5 +14,6 @@ data class SongEntity(
     val data: String,
     val albumArtUri: String? = null,
     val isFavorite: Boolean = false,
+    val isHidden: Boolean = false,
     val dateAdded: Long = System.currentTimeMillis()
 )

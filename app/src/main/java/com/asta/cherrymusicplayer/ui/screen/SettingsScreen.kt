@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,11 +43,11 @@ fun SettingsScreen(
 
     val sleepTimerOptions = listOf(
         Pair("Off", 0),
+        Pair("5m", 5),
+        Pair("10m", 10),
         Pair("15m", 15),
         Pair("30m", 30),
-        Pair("45m", 45),
-        Pair("60m", 60),
-        Pair("90m", 90)
+        Pair("1h", 60)
     )
 
     val speedOptions = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
@@ -86,6 +87,148 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             contentPadding = PaddingValues(bottom = 32.dp, top = 8.dp)
         ) {
+            // Media Library & Scanner Section
+            item {
+                SettingsSectionCard(title = "Device Scanner & Library", icon = Icons.AutoMirrored.Rounded.ManageSearch) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Scan Device for Music",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = CherryTextPrimary
+                        )
+                        Text(
+                            text = "Scan local storage for audio files (.mp3, .m4a, .flac, .wav, .ogg, .aac, .opus, .wma, .aiff, .alac, .mid, .mka) with duration ≥ 60s and add newly found music to your library.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = CherryTextSecondary
+                        )
+
+                        Button(
+                            onClick = { settingsViewModel.scanDevice() },
+                            enabled = !settingsUiState.isScanning,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = CherryPrimary,
+                                disabledContainerColor = CherryPrimary.copy(alpha = 0.5f)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                        ) {
+                            if (settingsUiState.isScanning) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Scanning Device...",
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Rounded.Refresh,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Scan Device Now",
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        if (!settingsUiState.scanStatusMessage.isNullOrEmpty()) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .border(1.dp, CherryPrimary.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
+                                color = CherryHighlight
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = settingsUiState.scanStatusMessage!!,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = CherryPrimary,
+                                        fontFamily = FontFamily.Monospace,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    IconButton(
+                                        onClick = { settingsViewModel.clearScanMessage() },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = "Dismiss",
+                                            tint = CherryPrimary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = CherryBorder.copy(alpha = 0.5f))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Hidden Music",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = CherryTextPrimary
+                                )
+                                Text(
+                                    text = "Unhide songs hidden from library",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CherryTextSecondary
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = { settingsViewModel.unhideAllSongs() },
+                                border = androidx.compose.foundation.BorderStroke(1.dp, CherryBorder),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Visibility,
+                                    contentDescription = null,
+                                    tint = CherryPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Unhide All",
+                                    color = CherryTextPrimary,
+                                    fontFamily = FontFamily.Monospace,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Theme Glow Section
             item {
                 SettingsSectionCard(title = "Appearance & Glow", icon = Icons.Rounded.Lightbulb) {

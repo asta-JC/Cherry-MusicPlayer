@@ -27,6 +27,28 @@ A sleek, modern Android music player app built with **Jetpack Compose** and **Me
 
 ---
 
+## 🚀 What's New (Latest Updates)
+
+- **Fluid Now Playing Dock & Expand Animations**:
+  - Tapping the bottom MiniPlayer triggers a smooth scale-up expansion from the bottom center into fullscreen Now Playing.
+  - Exiting Now Playing (via back button, down arrow, or downward swipe gesture) executes a graceful scale-down and downward glide that docks directly back into the MiniPlayer with custom z-index foreground layering.
+- **MiniPlayer Live Progress Fill**:
+  - Added an integrated progress indicator line across the MiniPlayer that tracks current playback position in real time.
+- **Live Library Track Glow Sync**:
+  - The currently playing track in the Library highlights with an active cherry glow that synchronizes immediately when skipping tracks from the MiniPlayer or Now Playing screen.
+- **Global MiniPlayer Visibility**:
+  - MiniPlayer is now accessible across Playlists, Favorites, and filtered song views.
+- **Manual Library Rescan & Audio Format Expansion**:
+  - "Scan Device" action in Settings to instantly detect newly added music.
+  - Expanded support for `.mp3`, `.m4a`, `.flac`, `.wav`, `.aac`, `.ogg`, and `.opus`.
+  - Tuned minimum duration threshold down to 60 seconds.
+- **Hide Song Capability**:
+  - Long-press any song in the Library to hide it permanently from playback and lists.
+- **Album & Artist Drill-Down**:
+  - Tap any album or artist card to open a filtered song list view.
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Language**: [Kotlin](https://kotlinlang.org/) (2.1.10)

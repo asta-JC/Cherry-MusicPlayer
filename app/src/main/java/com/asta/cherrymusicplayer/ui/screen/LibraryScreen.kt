@@ -4,9 +4,11 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -45,15 +47,20 @@ import com.asta.cherrymusicplayer.ui.viewmodel.LibraryTab
 import com.asta.cherrymusicplayer.ui.viewmodel.LibraryViewModel
 import com.asta.cherrymusicplayer.ui.viewmodel.SortOption
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
+    currentPlayingSongId: Long? = null,
     onSongClick: (SongEntity) -> Unit = {},
+    onAlbumClick: (Album) -> Unit = {},
+    onArtistClick: (Artist) -> Unit = {},
+    onPlaylistClick: (PlaylistEntity) -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    var songToHide by remember { mutableStateOf<SongEntity?>(null) }
 
     val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -77,7 +84,68 @@ fun LibraryScreen(
 
     var showSortMenu by remember { mutableStateOf(false) }
 
-Scaffold(
+    if (songToHide != null) {
+        val song = songToHide!!
+        AlertDialog(
+            onDismissRequest = { songToHide = null },
+            containerColor = CherrySurface,
+            titleContentColor = CherryTextPrimary,
+            textContentColor = CherryTextSecondary,
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.VisibilityOff,
+                    contentDescription = null,
+                    tint = CherryPrimary,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Hide Song",
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Hide \"${song.title}\" from your library? You will never see it here again.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.hideSong(song)
+                        songToHide = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = CherryPrimary),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = "Hide",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { songToHide = null },
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CherryBorder),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        color = CherryTextSecondary,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+        )
+    }
+
+    Scaffold(
         containerColor = CherryBackground,
         contentWindowInsets = WindowInsets.systemBars,
         topBar = {
@@ -245,6 +313,7 @@ Scaffold(
                     containerColor = Color.Transparent,
                     contentColor = CherryPrimary,
                     edgePadding = 0.dp,
+                    indicator = {},
                     divider = {}
                 ) {
                     val tabs = listOf(
@@ -352,14 +421,18 @@ Scaffold(
                                 contentPadding = PaddingValues(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                val activeSongId = currentPlayingSongId ?: uiState.currentPlayingSongId
                                 items(uiState.songs, key = { it.id }) { song ->
-                                    val isPlaying = song.id == uiState.currentPlayingSongId
+                                    val isPlaying = song.id == activeSongId
                                     SongItemCard(
                                         song = song,
                                         isPlaying = isPlaying,
                                         onClick = {
                                             viewModel.setCurrentPlayingSong(song.id)
                                             onSongClick(song)
+                                        },
+                                        onLongClick = {
+                                            songToHide = song
                                         },
                                         onFavoriteClick = { viewModel.toggleFavorite(song) }
                                     )
@@ -381,7 +454,10 @@ Scaffold(
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 items(uiState.albums, key = { it.id }) { album ->
-                                    AlbumItemCard(album = album)
+                                    AlbumItemCard(
+                                        album = album,
+                                        onClick = { onAlbumClick(album) }
+                                    )
                                 }
                             }
                         }
@@ -398,7 +474,10 @@ Scaffold(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 items(uiState.artists, key = { it.name }) { artist ->
-                                    ArtistItemCard(artist = artist)
+                                    ArtistItemCard(
+                                        artist = artist,
+                                        onClick = { onArtistClick(artist) }
+                                    )
                                 }
                             }
                         }
@@ -415,7 +494,10 @@ Scaffold(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 items(uiState.playlists, key = { it.id }) { playlist ->
-                                    PlaylistItemCard(playlist = playlist)
+                                    PlaylistItemCard(
+                                        playlist = playlist,
+                                        onClick = { onPlaylistClick(playlist) }
+                                    )
                                 }
                             }
                         }
@@ -426,11 +508,13 @@ Scaffold(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SongItemCard(
     song: SongEntity,
     isPlaying: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
     onFavoriteClick: () -> Unit
 ) {
     val durationFormatted = remember(song.duration) {
@@ -448,7 +532,10 @@ fun SongItemCard(
                 color = if (isPlaying) CherryPrimary else CherryBorder,
                 shape = RoundedCornerShape(14.dp)
             )
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         colors = CardDefaults.cardColors(
             containerColor = if (isPlaying) CherryHighlight else CherrySurface
         )
@@ -544,12 +631,16 @@ fun SongItemCard(
 }
 
 @Composable
-fun AlbumItemCard(album: Album) {
+fun AlbumItemCard(
+    album: Album,
+    onClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, CherryBorder, RoundedCornerShape(14.dp)),
+            .border(1.dp, CherryBorder, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = CherrySurface)
     ) {
         Column(
@@ -600,12 +691,16 @@ fun AlbumItemCard(album: Album) {
 }
 
 @Composable
-fun ArtistItemCard(artist: Artist) {
+fun ArtistItemCard(
+    artist: Artist,
+    onClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, CherryBorder, RoundedCornerShape(14.dp)),
+            .border(1.dp, CherryBorder, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = CherrySurface)
     ) {
         Row(
@@ -650,12 +745,16 @@ fun ArtistItemCard(artist: Artist) {
 }
 
 @Composable
-fun PlaylistItemCard(playlist: PlaylistEntity) {
+fun PlaylistItemCard(
+    playlist: PlaylistEntity,
+    onClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, CherryBorder, RoundedCornerShape(14.dp)),
+            .border(1.dp, CherryBorder, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = CherrySurface)
     ) {
         Row(

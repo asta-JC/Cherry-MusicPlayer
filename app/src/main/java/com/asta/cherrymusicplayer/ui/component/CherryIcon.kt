@@ -206,3 +206,143 @@ private fun DrawScope.drawLeaf(
         )
     }
 }
+
+/**
+ * Custom Sleepy Cherry icon for the sleep timer button.
+ * Draws cute cherries with peaceful sleeping eyes (^ ^ or - -) and floating 'z Z' sleep particles.
+ *
+ * @param isActive Whether a sleep timer is currently active
+ * @param modifier Modifier for sizing and layout
+ * @param activeColor Color when timer is active
+ * @param inactiveColor Color when timer is inactive
+ * @param size Size of the icon
+ */
+@Composable
+fun SleepyCherryIcon(
+    isActive: Boolean,
+    modifier: Modifier = Modifier,
+    activeColor: Color = CherryPrimary,
+    inactiveColor: Color = CherryTextSecondary,
+    size: Dp = 26.dp
+) {
+    val animatedColor by animateColorAsState(
+        targetValue = if (isActive) activeColor else inactiveColor,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "SleepyCherryColorAnimation"
+    )
+
+    Canvas(
+        modifier = modifier.size(size)
+    ) {
+        val w = this.size.width
+        val h = this.size.height
+
+        val cherryRadius = w * 0.17f
+        val leftCherryCenter = Offset(w * 0.32f, h * 0.72f)
+        val rightCherryCenter = Offset(w * 0.68f, h * 0.78f)
+
+        val strokeWidth = w * 0.07f
+        val drawStyle = if (isActive) Fill else Stroke(
+            width = strokeWidth,
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round
+        )
+
+        // Draw cherry fruits
+        drawCircle(
+            color = animatedColor,
+            radius = cherryRadius,
+            center = leftCherryCenter,
+            style = drawStyle
+        )
+        drawCircle(
+            color = animatedColor,
+            radius = cherryRadius,
+            center = rightCherryCenter,
+            style = drawStyle
+        )
+
+        // Stems
+        val junctionPoint = Offset(w * 0.52f, h * 0.20f)
+        val stemColor = if (isActive) Color(0xFF2E7D32) else animatedColor
+        val stemStroke = Stroke(
+            width = strokeWidth * 0.8f,
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round
+        )
+
+        val leftStemPath = Path().apply {
+            moveTo(leftCherryCenter.x, leftCherryCenter.y - cherryRadius)
+            quadraticTo(
+                w * 0.28f, h * 0.35f,
+                junctionPoint.x, junctionPoint.y
+            )
+        }
+        drawPath(leftStemPath, stemColor, style = stemStroke)
+
+        val rightStemPath = Path().apply {
+            moveTo(rightCherryCenter.x, rightCherryCenter.y - cherryRadius)
+            quadraticTo(
+                w * 0.72f, h * 0.35f,
+                junctionPoint.x, junctionPoint.y
+            )
+        }
+        drawPath(rightStemPath, stemColor, style = stemStroke)
+
+        // Night cap / leaf at junction
+        val leafColor = if (isActive) Color(0xFF4CAF50) else animatedColor
+        drawLeaf(
+            center = Offset(junctionPoint.x + w * 0.08f, junctionPoint.y + h * 0.02f),
+            width = w * 0.20f,
+            height = h * 0.12f,
+            color = leafColor,
+            filled = isActive,
+            strokeWidth = strokeWidth * 0.7f
+        )
+
+        // Sleeping eyes (closed curved arcs like ^ or u)
+        val eyeColor = if (isActive) Color.White else animatedColor
+        val eyeStroke = Stroke(
+            width = strokeWidth * 0.75f,
+            cap = StrokeCap.Round
+        )
+
+        // Left cherry sleeping eye (arc)
+        val leftEyePath = Path().apply {
+            moveTo(leftCherryCenter.x - cherryRadius * 0.45f, leftCherryCenter.y)
+            quadraticTo(
+                leftCherryCenter.x, leftCherryCenter.y + cherryRadius * 0.45f,
+                leftCherryCenter.x + cherryRadius * 0.45f, leftCherryCenter.y
+            )
+        }
+        drawPath(leftEyePath, eyeColor, style = eyeStroke)
+
+        // Right cherry sleeping eye (arc)
+        val rightEyePath = Path().apply {
+            moveTo(rightCherryCenter.x - cherryRadius * 0.45f, rightCherryCenter.y)
+            quadraticTo(
+                rightCherryCenter.x, rightCherryCenter.y + cherryRadius * 0.45f,
+                rightCherryCenter.x + cherryRadius * 0.45f, rightCherryCenter.y
+            )
+        }
+        drawPath(rightEyePath, eyeColor, style = eyeStroke)
+
+        // Cute sleeping "z" indicator on top-right when active
+        val zColor = if (isActive) activeColor else animatedColor.copy(alpha = 0.7f)
+        val zStroke = Stroke(width = strokeWidth * 0.6f, cap = StrokeCap.Round)
+
+        // Little 'z' near right side
+        val zPath = Path().apply {
+            val zx = w * 0.82f
+            val zy = h * 0.25f
+            val zw = w * 0.12f
+            val zh = h * 0.12f
+            moveTo(zx, zy)
+            lineTo(zx + zw, zy)
+            lineTo(zx, zy + zh)
+            lineTo(zx + zw, zy + zh)
+        }
+        drawPath(zPath, zColor, style = zStroke)
+    }
+}
+

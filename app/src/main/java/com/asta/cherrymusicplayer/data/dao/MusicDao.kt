@@ -14,17 +14,26 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MusicDao {
 
-    @Query("SELECT * FROM songs ORDER BY title ASC")
+    @Query("SELECT * FROM songs WHERE isHidden = 0 ORDER BY title ASC")
     fun getAllSongs(): Flow<List<SongEntity>>
 
     @Query("SELECT * FROM songs WHERE id = :songId")
     suspend fun getSongById(songId: Long): SongEntity?
 
-    @Query("SELECT * FROM songs WHERE isFavorite = 1")
+    @Query("SELECT * FROM songs WHERE isFavorite = 1 AND isHidden = 0")
     fun getFavoriteSongs(): Flow<List<SongEntity>>
 
     @Query("SELECT id FROM songs WHERE isFavorite = 1")
     suspend fun getFavoriteIds(): List<Long>
+
+    @Query("SELECT id FROM songs WHERE isHidden = 1")
+    suspend fun getHiddenIds(): List<Long>
+
+    @Query("UPDATE songs SET isHidden = :isHidden WHERE id = :songId")
+    suspend fun setSongHidden(songId: Long, isHidden: Boolean)
+
+    @Query("UPDATE songs SET isHidden = 0")
+    suspend fun unhideAllSongs()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity)
@@ -65,7 +74,8 @@ interface MusicDao {
     @Query("""
         SELECT songs.* FROM songs
         INNER JOIN playlist_song_cross_ref ON songs.id = playlist_song_cross_ref.songId
-        WHERE playlist_song_cross_ref.playlistId = :playlistId
+        WHERE playlist_song_cross_ref.playlistId = :playlistId AND songs.isHidden = 0
     """)
     fun getSongsForPlaylist(playlistId: Long): Flow<List<SongEntity>>
 }
+

@@ -55,7 +55,7 @@ class PreferencesManager @Inject constructor(
         .map { preferences -> preferences[PreferencesKeys.EQUALIZER_PRESET] ?: "Normal" }
 
     val minSongDurationFlow: Flow<Long> = context.dataStore.data
-        .map { preferences -> preferences[PreferencesKeys.MIN_SONG_DURATION] ?: 100_000L }
+        .map { preferences -> preferences[PreferencesKeys.MIN_SONG_DURATION] ?: 60_000L }
 
     suspend fun setDarkThemeGlow(enabled: Boolean) {
         context.dataStore.edit { preferences ->

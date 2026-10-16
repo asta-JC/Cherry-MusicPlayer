@@ -1,23 +1,29 @@
 package com.asta.cherrymusicplayer.ui.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.automirrored.rounded.VolumeDown
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import coil.compose.AsyncImage
 import com.asta.cherrymusicplayer.ui.component.CherryIcon
+import com.asta.cherrymusicplayer.ui.component.SleepyCherryIcon
 import com.asta.cherrymusicplayer.ui.theme.*
 import com.asta.cherrymusicplayer.ui.viewmodel.PlayerViewModel
 
@@ -41,6 +48,16 @@ fun NowPlayingScreen(
     var showSleepTimerDialog by remember { mutableStateOf(false) }
     var showQueueSheet by remember { mutableStateOf(false) }
 
+    BackHandler(enabled = true) {
+        if (showQueueSheet) {
+            showQueueSheet = false
+        } else if (showSleepTimerDialog) {
+            showSleepTimerDialog = false
+        } else {
+            onBackClick()
+        }
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "AlbumRotation")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -55,6 +72,10 @@ fun NowPlayingScreen(
     Scaffold(
         containerColor = CherryBackground,
         contentWindowInsets = WindowInsets.systemBars,
+        modifier = Modifier
+            .fillMaxSize()
+            .shadow(16.dp, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
         topBar = {
             TopAppBar(
                 title = {
@@ -78,11 +99,27 @@ fun NowPlayingScreen(
                 actions = {
                     IconButton(onClick = { showQueueSheet = true }) {
                         Icon(
-                            imageVector = Icons.Rounded.QueueMusic,
+                            imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
                             contentDescription = "Queue",
                             tint = CherryPrimary
                         )
                     }
+                },
+                modifier = Modifier.pointerInput(Unit) {
+                    var totalDragY = 0f
+                    detectVerticalDragGestures(
+                        onDragEnd = { totalDragY = 0f },
+                        onDragCancel = { totalDragY = 0f },
+                        onVerticalDrag = { change, dragAmount ->
+                            if (dragAmount > 0) {
+                                totalDragY += dragAmount
+                                if (totalDragY > 40f) {
+                                    change.consume()
+                                    onBackClick()
+                                }
+                            }
+                        }
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = CherryBackground)
             )
@@ -133,7 +170,9 @@ fun NowPlayingScreen(
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .rotate(if (uiState.isPlaying) rotation else 0f),
+                                .graphicsLayer {
+                                    rotationZ = if (uiState.isPlaying) rotation else 0f
+                                },
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -290,11 +329,9 @@ fun NowPlayingScreen(
                 ) {
                     IconButton(onClick = { showSleepTimerDialog = true }) {
                         Box(contentAlignment = Alignment.TopEnd) {
-                            Icon(
-                                imageVector = Icons.Rounded.Bedtime,
-                                contentDescription = "Sleep Timer",
-                                tint = if (uiState.sleepTimerMinutes != null) CherryPrimary else CherryTextPrimary,
-                                modifier = Modifier.size(26.dp)
+                            SleepyCherryIcon(
+                                isActive = uiState.sleepTimerMinutes != null,
+                                size = 28.dp
                             )
                             if (uiState.sleepTimerMinutes != null) {
                                 Box(
@@ -312,7 +349,7 @@ fun NowPlayingScreen(
                         modifier = Modifier.width(180.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.VolumeDown,
+                            imageVector = Icons.AutoMirrored.Rounded.VolumeDown,
                             contentDescription = "Volume",
                             tint = CherryTextSecondary,
                             modifier = Modifier.size(22.dp)
@@ -331,7 +368,7 @@ fun NowPlayingScreen(
                             modifier = Modifier.weight(1f)
                         )
                         Icon(
-                            imageVector = Icons.Rounded.VolumeUp,
+                            imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
                             contentDescription = "Volume Up",
                             tint = CherryTextSecondary,
                             modifier = Modifier.size(22.dp)
@@ -343,40 +380,97 @@ fun NowPlayingScreen(
     }
 
     if (showSleepTimerDialog) {
+        val timerOptions = listOf(
+            Pair("5 minutes", 5),
+            Pair("10 minutes", 10),
+            Pair("15 minutes", 15),
+            Pair("30 minutes", 30),
+            Pair("1 hour", 60)
+        )
+
         AlertDialog(
             onDismissRequest = { showSleepTimerDialog = false },
             containerColor = CherrySurface,
-            title = { Text("Sleep Timer", color = CherryTextPrimary) },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SleepyCherryIcon(isActive = true, size = 26.dp)
+                    Text("Sleep Timer", color = CherryTextPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(15, 30, 45, 60, 90).forEach { minutes ->
+                    if (uiState.sleepTimerMinutes != null && uiState.sleepTimerRemainingMillis != null) {
+                        val remainingMinutes = (uiState.sleepTimerRemainingMillis!! / 1000 / 60) + 1
+                        Text(
+                            text = "Active: ~$remainingMinutes min remaining",
+                            color = CherryPrimary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    timerOptions.forEach { (label, minutes) ->
+                        val isCurrent = uiState.sleepTimerMinutes == minutes
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isCurrent) CherryPrimary else CherryBorder,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .clickable {
+                                    viewModel.setSleepTimer(minutes)
+                                    showSleepTimerDialog = false
+                                },
+                            color = if (isCurrent) CherryHighlight else CherryBackground
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isCurrent) CherryPrimary else CherryTextPrimary,
+                                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
+                                )
+                                if (isCurrent) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Check,
+                                        contentDescription = "Selected",
+                                        tint = CherryPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (uiState.sleepTimerMinutes != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
                         TextButton(
                             onClick = {
-                                viewModel.setSleepTimer(minutes)
+                                viewModel.setSleepTimer(0)
                                 showSleepTimerDialog = false
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "$minutes minutes",
-                                color = if (uiState.sleepTimerMinutes == minutes) CherryPrimary else CherryTextPrimary
-                            )
+                            Text("Turn Off Timer", color = CherryPrimaryDark)
                         }
-                    }
-                    TextButton(
-                        onClick = {
-                            viewModel.setSleepTimer(0)
-                            showSleepTimerDialog = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Turn Off Timer", color = CherryPrimary)
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showSleepTimerDialog = false }) {
-                    Text("Close", color = CherryPrimary)
+                    Text("Close", color = CherryTextSecondary)
                 }
             }
         )

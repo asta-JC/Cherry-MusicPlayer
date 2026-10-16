@@ -50,7 +50,7 @@ class LibraryViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        const val MIN_SONG_DURATION_MS = 100_000L // 100 seconds — filters out voice messages & short clips
+        const val MIN_SONG_DURATION_MS = 60_000L // 60 seconds — filters out short audio/voice notes
     }
 
     private val _searchQuery = MutableStateFlow("")
@@ -202,6 +202,18 @@ class LibraryViewModel @Inject constructor(
 
     fun setCurrentPlayingSong(songId: Long?) {
         _currentPlayingSongId.value = songId
+    }
+
+    fun hideSong(song: SongEntity) {
+        viewModelScope.launch {
+            musicRepository.hideSong(song.id)
+        }
+    }
+
+    fun unhideAllSongs() {
+        viewModelScope.launch {
+            musicRepository.unhideAllSongs()
+        }
     }
 }
 

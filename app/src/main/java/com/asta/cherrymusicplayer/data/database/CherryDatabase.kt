@@ -13,7 +13,7 @@ import com.asta.cherrymusicplayer.data.entity.SongEntity
         PlaylistEntity::class,
         PlaylistSongCrossRef::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class CherryDatabase : RoomDatabase() {
