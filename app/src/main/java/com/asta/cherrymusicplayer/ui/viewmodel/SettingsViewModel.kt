@@ -14,29 +14,23 @@ import javax.inject.Inject
 data class SettingsUiState(
     val darkThemeGlow: Boolean = true,
     val playbackSpeed: Float = 1.0f,
-    val equalizerPreset: String = "Normal",
-    val sleepTimerMinutes: Int? = null,
-    val sleepTimerRemainingMillis: Long? = null
+    val equalizerPreset: String = "Normal"
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val preferencesManager: PreferencesManager,
-    private val playerViewModel: PlayerViewModel
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     val uiState: StateFlow<SettingsUiState> = combine(
         preferencesManager.darkThemeGlowFlow,
         preferencesManager.playbackSpeedFlow,
-        preferencesManager.equalizerPresetFlow,
-        playerViewModel.uiState
-    ) { glow, speed, eq, playerState ->
+        preferencesManager.equalizerPresetFlow
+    ) { glow, speed, eq ->
         SettingsUiState(
             darkThemeGlow = glow,
             playbackSpeed = speed,
-            equalizerPreset = eq,
-            sleepTimerMinutes = playerState.sleepTimerMinutes,
-            sleepTimerRemainingMillis = playerState.sleepTimerRemainingMillis
+            equalizerPreset = eq
         )
     }.stateIn(
         scope = viewModelScope,
@@ -50,17 +44,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setPlaybackSpeed(speed: Float) {
-        playerViewModel.setPlaybackSpeed(speed)
-    }
-
     fun setEqualizerPreset(preset: String) {
         viewModelScope.launch {
             preferencesManager.setEqualizerPreset(preset)
         }
-    }
-
-    fun setSleepTimer(minutes: Int) {
-        playerViewModel.setSleepTimer(minutes)
     }
 }

@@ -23,6 +23,9 @@ interface MusicDao {
     @Query("SELECT * FROM songs WHERE isFavorite = 1")
     fun getFavoriteSongs(): Flow<List<SongEntity>>
 
+    @Query("SELECT id FROM songs WHERE isFavorite = 1")
+    suspend fun getFavoriteIds(): List<Long>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity)
 

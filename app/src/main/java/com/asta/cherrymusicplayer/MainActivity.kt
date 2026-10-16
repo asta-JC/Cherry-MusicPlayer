@@ -219,7 +219,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                     is Screen.Settings -> NavEntry(key) {
                                         SettingsScreen(
-                                            viewModel = settingsViewModel,
+                                            settingsViewModel = settingsViewModel,
+                                            playerViewModel = playerViewModel,
                                             onBackClick = { backStack.removeLastOrNull() }
                                         )
                                     }

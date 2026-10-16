@@ -30,6 +30,7 @@ class PreferencesManager @Inject constructor(
         val PLAYBACK_SPEED = floatPreferencesKey("playback_speed")
         val LAST_PLAYBACK_POSITION = longPreferencesKey("last_playback_position")
         val EQUALIZER_PRESET = stringPreferencesKey("equalizer_preset")
+        val MIN_SONG_DURATION = longPreferencesKey("min_song_duration_ms")
     }
 
     val darkThemeGlowFlow: Flow<Boolean> = context.dataStore.data
@@ -52,6 +53,9 @@ class PreferencesManager @Inject constructor(
 
     val equalizerPresetFlow: Flow<String> = context.dataStore.data
         .map { preferences -> preferences[PreferencesKeys.EQUALIZER_PRESET] ?: "Normal" }
+
+    val minSongDurationFlow: Flow<Long> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.MIN_SONG_DURATION] ?: 100_000L }
 
     suspend fun setDarkThemeGlow(enabled: Boolean) {
         context.dataStore.edit { preferences ->
@@ -92,6 +96,12 @@ class PreferencesManager @Inject constructor(
     suspend fun setEqualizerPreset(preset: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.EQUALIZER_PRESET] = preset
+        }
+    }
+
+    suspend fun setMinSongDuration(durationMs: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MIN_SONG_DURATION] = durationMs
         }
     }
 }

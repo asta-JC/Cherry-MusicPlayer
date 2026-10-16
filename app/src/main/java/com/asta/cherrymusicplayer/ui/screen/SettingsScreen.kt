@@ -22,15 +22,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.asta.cherrymusicplayer.ui.theme.*
+import com.asta.cherrymusicplayer.ui.viewmodel.PlayerViewModel
 import com.asta.cherrymusicplayer.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel,
+    settingsViewModel: SettingsViewModel,
+    playerViewModel: PlayerViewModel,
     onBackClick: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val settingsUiState by settingsViewModel.uiState.collectAsState()
+    val playerUiState by playerViewModel.uiState.collectAsState()
 
     val eqPresets = listOf(
         "Normal", "Classical", "Dance", "Flat", "Folk",
@@ -108,8 +111,8 @@ fun SettingsScreen(
                             )
                         }
                         Switch(
-                            checked = uiState.darkThemeGlow,
-                            onCheckedChange = { viewModel.setDarkThemeGlow(it) },
+                            checked = settingsUiState.darkThemeGlow,
+                            onCheckedChange = { settingsViewModel.setDarkThemeGlow(it) },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = CherryPrimary,
@@ -130,13 +133,13 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Current Speed: ${String.format(java.util.Locale.US, "%.2fx", uiState.playbackSpeed)}",
+                                text = "Current Speed: ${String.format(java.util.Locale.US, "%.2fx", settingsUiState.playbackSpeed)}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = CherryPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace
                             )
-                            TextButton(onClick = { viewModel.setPlaybackSpeed(1.0f) }) {
+                            TextButton(onClick = { playerViewModel.setPlaybackSpeed(1.0f) }) {
                                 Text("Reset to 1.0x", color = CherryTextSecondary)
                             }
                         }
@@ -147,7 +150,7 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(speedOptions) { speed ->
-                                val isSelected = kotlin.math.abs(uiState.playbackSpeed - speed) < 0.01f
+                                val isSelected = kotlin.math.abs(settingsUiState.playbackSpeed - speed) < 0.01f
                                 Surface(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
@@ -156,7 +159,7 @@ fun SettingsScreen(
                                             color = if (isSelected) CherryPrimary else CherryBorder,
                                             shape = RoundedCornerShape(8.dp)
                                         )
-                                        .clickable { viewModel.setPlaybackSpeed(speed) },
+                                        .clickable { playerViewModel.setPlaybackSpeed(speed) },
                                     color = if (isSelected) CherryHighlight else CherrySurface
                                 ) {
                                     Text(
@@ -193,7 +196,7 @@ fun SettingsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 rowItems.forEach { preset ->
-                                    val isSelected = uiState.equalizerPreset == preset
+                                    val isSelected = settingsUiState.equalizerPreset == preset
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
@@ -204,7 +207,7 @@ fun SettingsScreen(
                                                 color = if (isSelected) CherryPrimary else CherryBorder,
                                                 shape = RoundedCornerShape(10.dp)
                                             )
-                                            .clickable { viewModel.setEqualizerPreset(preset) }
+                                            .clickable { settingsViewModel.setEqualizerPreset(preset) }
                                             .padding(vertical = 12.dp, horizontal = 8.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -230,8 +233,8 @@ fun SettingsScreen(
             item {
                 SettingsSectionCard(title = "Sleep Timer", icon = Icons.Rounded.Timer) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (uiState.sleepTimerMinutes != null && uiState.sleepTimerRemainingMillis != null) {
-                            val remainingMinutes = (uiState.sleepTimerRemainingMillis!! / 1000 / 60) + 1
+                        if (playerUiState.sleepTimerMinutes != null && playerUiState.sleepTimerRemainingMillis != null) {
+                            val remainingMinutes = (playerUiState.sleepTimerRemainingMillis!! / 1000 / 60) + 1
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -243,7 +246,7 @@ fun SettingsScreen(
                                     color = CherryPrimary,
                                     fontWeight = FontWeight.SemiBold
                                 )
-                                TextButton(onClick = { viewModel.setSleepTimer(0) }) {
+                                TextButton(onClick = { playerViewModel.setSleepTimer(0) }) {
                                     Text("Cancel", color = CherryPrimaryDark)
                                 }
                             }
@@ -260,7 +263,7 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(sleepTimerOptions) { (label, minutes) ->
-                                val isSelected = if (minutes == 0) uiState.sleepTimerMinutes == null else uiState.sleepTimerMinutes == minutes
+                                val isSelected = if (minutes == 0) playerUiState.sleepTimerMinutes == null else playerUiState.sleepTimerMinutes == minutes
                                 Surface(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
@@ -269,7 +272,7 @@ fun SettingsScreen(
                                             color = if (isSelected) CherryPrimary else CherryBorder,
                                             shape = RoundedCornerShape(8.dp)
                                         )
-                                        .clickable { viewModel.setSleepTimer(minutes) },
+                                        .clickable { playerViewModel.setSleepTimer(minutes) },
                                     color = if (isSelected) CherryHighlight else CherrySurface
                                 ) {
                                     Text(

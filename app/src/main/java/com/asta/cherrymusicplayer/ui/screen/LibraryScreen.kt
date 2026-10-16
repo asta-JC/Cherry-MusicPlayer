@@ -39,6 +39,7 @@ import com.asta.cherrymusicplayer.data.entity.PlaylistEntity
 import com.asta.cherrymusicplayer.data.entity.SongEntity
 import com.asta.cherrymusicplayer.data.repository.Album
 import com.asta.cherrymusicplayer.data.repository.Artist
+import com.asta.cherrymusicplayer.ui.component.CherryIcon
 import com.asta.cherrymusicplayer.ui.theme.*
 import com.asta.cherrymusicplayer.ui.viewmodel.LibraryTab
 import com.asta.cherrymusicplayer.ui.viewmodel.LibraryViewModel
@@ -185,6 +186,7 @@ Scaffold(
                                     }
                                 )
                             }
+                        }
                     }
                 }
 
@@ -531,10 +533,9 @@ fun SongItemCard(
                     color = CherryTextSecondary
                 )
                 IconButton(onClick = onFavoriteClick) {
-                    Icon(
-                        imageVector = if (song.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = if (song.isFavorite) CherryPrimary else CherryTextSecondary
+                    CherryIcon(
+                        filled = song.isFavorite,
+                        size = 24.dp
                     )
                 }
             }

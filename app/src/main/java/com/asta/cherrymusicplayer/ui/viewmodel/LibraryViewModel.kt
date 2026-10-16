@@ -49,6 +49,10 @@ class LibraryViewModel @Inject constructor(
     private val musicRepository: MusicRepository
 ) : ViewModel() {
 
+    companion object {
+        const val MIN_SONG_DURATION_MS = 100_000L // 100 seconds — filters out voice messages & short clips
+    }
+
     private val _searchQuery = MutableStateFlow("")
     private val _currentTab = MutableStateFlow(LibraryTab.SONGS)
     private val _sortOption = MutableStateFlow(SortOption.TITLE)
@@ -95,7 +99,12 @@ class LibraryViewModel @Inject constructor(
         val loading = extra.second
         val playingId = extra.third
 
-        val filteredSongs = rawData.songs.filter { song ->
+        // First filter out short audio (voice messages, notifications, etc.)
+        val durationFilteredSongs = rawData.songs.filter { song ->
+            song.duration >= MIN_SONG_DURATION_MS
+        }
+
+        val filteredSongs = durationFilteredSongs.filter { song ->
             query.isBlank() ||
                 song.title.contains(query, ignoreCase = true) ||
                 song.artist.contains(query, ignoreCase = true) ||
@@ -108,13 +117,30 @@ class LibraryViewModel @Inject constructor(
             }
         }
 
-        val filteredAlbums = rawData.albums.filter { album ->
+        // Filter albums and artists to only include songs that pass the duration filter
+        val durationFilteredAlbums = rawData.albums.map { album ->
+            album.copy(songs = album.songs.filter { it.duration >= MIN_SONG_DURATION_MS })
+        }.filter { it.songs.isNotEmpty() }.map { album ->
+            album.copy(songCount = album.songs.size)
+        }
+
+        val filteredAlbums = durationFilteredAlbums.filter { album ->
             query.isBlank() ||
                 album.title.contains(query, ignoreCase = true) ||
                 album.artist.contains(query, ignoreCase = true)
         }.sortedBy { it.title.lowercase() }
 
-        val filteredArtists = rawData.artists.filter { artist ->
+        val durationFilteredArtists = rawData.artists.map { artist ->
+            val filteredArtistSongs = artist.songs.filter { it.duration >= MIN_SONG_DURATION_MS }
+            val albumCount = filteredArtistSongs.map { it.album }.distinct().size
+            artist.copy(
+                songs = filteredArtistSongs,
+                songCount = filteredArtistSongs.size,
+                albumCount = albumCount
+            )
+        }.filter { it.songs.isNotEmpty() }
+
+        val filteredArtists = durationFilteredArtists.filter { artist ->
             query.isBlank() || artist.name.contains(query, ignoreCase = true)
         }.sortedBy { artist -> artist.name.lowercase() }
 

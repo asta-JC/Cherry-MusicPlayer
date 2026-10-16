@@ -44,7 +44,7 @@ class MusicRepository @Inject constructor(
     val favoriteSongs: Flow<List<SongEntity>> = musicDao.getFavoriteSongs()
     val allPlaylists: Flow<List<PlaylistEntity>> = musicDao.getAllPlaylists()
 
-    suspend fun scanDeviceAudio(): List<SongEntity> = withContext(Dispatchers.IO) {
+    suspend fun scanDeviceAudio(minDurationMs: Long = 100_000L): List<SongEntity> = withContext(Dispatchers.IO) {
         val songs = mutableListOf<SongEntity>()
         val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
@@ -59,7 +59,8 @@ class MusicRepository @Inject constructor(
             MediaStore.Audio.Media.DATE_ADDED
         )
 
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        // Filter: must be music AND at least minDurationMs long
+        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= $minDurationMs"
         val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
 
         try {
@@ -89,6 +90,9 @@ class MusicRepository @Inject constructor(
                     val albumId = cursor.getLong(albumIdColumn)
                     val dateAdded = cursor.getLong(dateAddedColumn) * 1000L
 
+                    // Double-check duration filter (safety net)
+                    if (duration < minDurationMs) continue
+
                     val file = File(data)
                     val extension = file.extension.lowercase()
                     if (data.isNotEmpty() && (extension in listOf("mp3", "m4a", "flac", "wav", "ogg") || file.exists())) {
@@ -117,7 +121,16 @@ class MusicRepository @Inject constructor(
         }
 
         if (songs.isNotEmpty()) {
-            musicDao.insertSongs(songs)
+            // Preserve existing favorite flags during re-scan
+            val existingFavoriteIds = musicDao.getFavoriteIds().toSet()
+            val songsToInsert = songs.map { song ->
+                if (song.id in existingFavoriteIds) {
+                    song.copy(isFavorite = true)
+                } else {
+                    song
+                }
+            }
+            musicDao.insertSongs(songsToInsert)
         }
         songs
     }

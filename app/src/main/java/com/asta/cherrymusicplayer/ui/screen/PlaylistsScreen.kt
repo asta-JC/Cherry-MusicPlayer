@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.asta.cherrymusicplayer.data.entity.PlaylistEntity
 import com.asta.cherrymusicplayer.data.entity.SongEntity
+import com.asta.cherrymusicplayer.ui.component.CherryIcon
 import com.asta.cherrymusicplayer.ui.theme.*
 import com.asta.cherrymusicplayer.ui.viewmodel.LibraryViewModel
 import com.asta.cherrymusicplayer.ui.viewmodel.PlayerViewModel
@@ -102,11 +103,9 @@ fun PlaylistsScreen(
                                 .background(CherryBackground),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Favorite,
-                                contentDescription = null,
-                                tint = CherryPrimary,
-                                modifier = Modifier.size(28.dp)
+                            CherryIcon(
+                                filled = true,
+                                size = 28.dp
                             )
                         }
                         Column(modifier = Modifier.weight(1f)) {
@@ -368,10 +367,9 @@ fun PlaylistDetailScreen(
                                     )
                                 }
                                 IconButton(onClick = { playerViewModel.toggleFavorite(song) }) {
-                                    Icon(
-                                        imageVector = if (song.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                                        contentDescription = "Favorite",
-                                        tint = if (song.isFavorite) CherryPrimary else CherryTextSecondary
+                                    CherryIcon(
+                                        filled = song.isFavorite,
+                                        size = 24.dp
                                     )
                                 }
                                 if (playlistId != null) {

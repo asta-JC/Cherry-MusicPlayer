@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import coil.compose.AsyncImage
+import com.asta.cherrymusicplayer.ui.component.CherryIcon
 import com.asta.cherrymusicplayer.ui.theme.*
 import com.asta.cherrymusicplayer.ui.viewmodel.PlayerViewModel
 
@@ -167,11 +168,9 @@ fun NowPlayingScreen(
                     IconButton(
                         onClick = { viewModel.toggleFavorite(song) }
                     ) {
-                        Icon(
-                            imageVector = if (song.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = if (song.isFavorite) CherryPrimary else CherryTextSecondary,
-                            modifier = Modifier.size(28.dp)
+                        CherryIcon(
+                            filled = song.isFavorite,
+                            size = 28.dp
                         )
                     }
                 }
