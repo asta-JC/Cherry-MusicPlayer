@@ -4,7 +4,7 @@
   <p><strong>Your music, close at hand.</strong></p>
   <p>A local audio player for Android, with a searchable library, personal playlists, and a soft cherry interface.</p>
   <p>
-    <img src="https://img.shields.io/badge/version-1.0-AF294A?style=flat-square" alt="Version 1.0" />
+    <img src="https://img.shields.io/badge/version-1.1-AF294A?style=flat-square" alt="Version 1.1" />
     <img src="https://img.shields.io/badge/Android-7.0%2B-526B4E?style=flat-square" alt="Android 7.0 and newer" />
     <img src="https://img.shields.io/badge/built_with-Kotlin_%26_Compose-78616B?style=flat-square" alt="Built with Kotlin and Jetpack Compose" />
   </p>
@@ -25,15 +25,16 @@ Cherry Music Player brings the audio already on your phone into one library. Bro
 ## Screenshots
 
 <table>
-  <tr><th width="50%">Your library</th><th width="50%">Now playing</th></tr>
+  <tr><th width="33%">Your library</th><th width="33%">Now playing</th><th width="33%">Make it yours</th></tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/library-dark.png" width="300" alt="Cherry Music dark library with search, songs, albums, artists, and cherry favorite controls" /></td>
-    <td align="center"><img src="docs/screenshots/player-light.png" width="300" alt="Cherry Music light player with album artwork, seeking, playback controls, queue, and sleep timer" /></td>
+    <td align="center"><img src="docs/screenshots/library-light.png" width="250" alt="Cherry Music light library with search, songs, albums, artists, and favorite controls" /></td>
+    <td align="center"><img src="docs/screenshots/player-light.png" width="250" alt="Cherry Music light player with album artwork, seeking, playback controls, queue, and sleep timer" /></td>
+    <td align="center"><img src="docs/screenshots/settings-light.png" width="250" alt="Cherry Music light settings with local music scanning and System, Light, and Dark appearance choices" /></td>
   </tr>
-  <tr><td align="center">Find a song. Save a favorite.</td><td align="center">More room for the music.</td></tr>
+  <tr><td align="center">Find a song. Save a favorite.</td><td align="center">More room for the music.</td><td align="center">Choose how it feels.</td></tr>
 </table>
 
-Captured from the running app on a physical Samsung Galaxy S22 Ultra (SM-S908N). The player and library show local music from the device; songs are not bundled with the app. System status and navigation bars are omitted from the gallery captures.
+All three screenshots were captured in Light mode from v1.1 on a physical Samsung Galaxy S22 Ultra (SM-S908N). The player and library show local music from the device; songs are not bundled with the app. System status and navigation bars are omitted from the gallery captures.
 
 ## Features
 
@@ -115,7 +116,7 @@ app/src/main/java/com/asta/cherrymusicplayer/
 
 </details>
 
-## What's new in 1.0
+## What's new in 1.1
 
 - Softer light and dark themes with the full CherryApp header mark.
 - Clearer library actions, artwork fallbacks, and playlist controls.

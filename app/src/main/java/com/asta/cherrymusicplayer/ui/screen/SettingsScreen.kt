@@ -1,5 +1,6 @@
 package com.asta.cherrymusicplayer.ui.screen
 
+import com.asta.cherrymusicplayer.BuildConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -422,7 +423,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Cherry Music · v1.0",
+                            text = "Cherry Music · v${BuildConfig.VERSION_NAME}",
                             style = MaterialTheme.typography.bodyLarge,
                             fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.Bold,
