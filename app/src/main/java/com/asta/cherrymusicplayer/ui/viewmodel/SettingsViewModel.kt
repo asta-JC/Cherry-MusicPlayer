@@ -1,5 +1,6 @@
 package com.asta.cherrymusicplayer.ui.viewmodel
 
+import com.asta.cherrymusicplayer.data.preferences.ThemeMode
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.asta.cherrymusicplayer.data.preferences.PreferencesManager
@@ -14,7 +15,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class SettingsUiState(
-    val darkThemeGlow: Boolean = true,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val playbackSpeed: Float = 1.0f,
     val equalizerPreset: String = "Normal",
     val isScanning: Boolean = false,
@@ -31,14 +32,14 @@ class SettingsViewModel @Inject constructor(
     private val _scanStatusMessage = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<SettingsUiState> = combine(
-        preferencesManager.darkThemeGlowFlow,
+        preferencesManager.themeModeFlow,
         preferencesManager.playbackSpeedFlow,
         preferencesManager.equalizerPresetFlow,
         _isScanning,
         _scanStatusMessage
     ) { glow, speed, eq, scanning, msg ->
         SettingsUiState(
-            darkThemeGlow = glow,
+            themeMode = glow,
             playbackSpeed = speed,
             equalizerPreset = eq,
             isScanning = scanning,
@@ -50,10 +51,8 @@ class SettingsViewModel @Inject constructor(
         initialValue = SettingsUiState()
     )
 
-    fun setDarkThemeGlow(enabled: Boolean) {
-        viewModelScope.launch {
-            preferencesManager.setDarkThemeGlow(enabled)
-        }
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { preferencesManager.setThemeMode(mode) }
     }
 
     fun setEqualizerPreset(preset: String) {

@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -15,11 +14,15 @@ import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.luminance
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.NavDisplay
@@ -42,111 +45,62 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            CherryMusicPlayerTheme {
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
+            val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+            CherryMusicPlayerTheme(themeMode = settingsState.themeMode) {
+                val view = LocalView.current
+                val lightBars = MaterialTheme.colorScheme.background.luminance() > .5f
+                SideEffect {
+                    WindowCompat.getInsetsController(window, view).apply {
+                        isAppearanceLightStatusBars = lightBars
+                        isAppearanceLightNavigationBars = lightBars
+                    }
+                }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = CherryBackground
                 ) {
-                    val backStack = remember { mutableStateListOf<Any>(Screen.Library) }
+                    val backStack = rememberNavBackStack(Screen.Library)
                     val libraryViewModel: LibraryViewModel = hiltViewModel()
                     val playerViewModel: PlayerViewModel = hiltViewModel()
-                    val settingsViewModel: SettingsViewModel = hiltViewModel()
 
-                    val playerState by playerViewModel.uiState.collectAsState()
-                    val settingsState by settingsViewModel.uiState.collectAsState()
+                    val playerState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(CherryBackground)
                     ) {
-                        if (settingsState.darkThemeGlow) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.radialGradient(
-                                            colors = listOf(
-                                                CherryPrimary.copy(alpha = 0.18f),
-                                                Color.Transparent
-                                            ),
-                                            radius = 1400f
-                                        )
-                                    )
-                            )
-                        }
-
-                        val exitDuration = 1000
-                        val enterDuration = 600
-
-                        val nowPlayingEnterTransition = slideInVertically(
-                            animationSpec = tween(enterDuration, easing = FastOutSlowInEasing),
-                            initialOffsetY = { fullHeight -> fullHeight }
-                        ) + scaleIn(
-                            animationSpec = tween(enterDuration, easing = FastOutSlowInEasing),
-                            initialScale = 0.80f,
-                            transformOrigin = TransformOrigin(0.5f, 1f)
-                        ) + fadeIn(
-                            animationSpec = tween(enterDuration / 2)
-                        )
-
-                        val underlyingExitTransition = scaleOut(
-                            animationSpec = tween(enterDuration, easing = FastOutSlowInEasing),
-                            targetScale = 0.94f
-                        ) + fadeOut(
-                            animationSpec = tween(enterDuration / 2)
-                        )
-
-                        val underlyingEnterTransition = scaleIn(
-                            animationSpec = tween(exitDuration, easing = FastOutSlowInEasing),
-                            initialScale = 0.94f
-                        ) + fadeIn(
-                            animationSpec = tween(exitDuration / 2)
-                        )
-
-                        val nowPlayingExitTransition = slideOutVertically(
-                            animationSpec = tween(exitDuration, easing = FastOutSlowInEasing),
-                            targetOffsetY = { fullHeight -> fullHeight }
-                        ) + scaleOut(
-                            animationSpec = tween(exitDuration, easing = FastOutSlowInEasing),
-                            targetScale = 0.80f,
-                            transformOrigin = TransformOrigin(0.5f, 1f)
-                        ) + fadeOut(
-                            animationSpec = tween(350, delayMillis = exitDuration - 350)
-                        )
-
                         fun enterFromBottom(): ContentTransform =
-                            nowPlayingEnterTransition.togetherWith(underlyingExitTransition).apply {
-                                targetContentZIndex = 1f
-                            }
+                            (slideInVertically(tween(250), initialOffsetY = { it }) + fadeIn(tween(200)))
+                                .togetherWith(fadeOut(tween(200)))
 
                         fun popExitToBottom(): ContentTransform =
-                            underlyingEnterTransition.togetherWith(nowPlayingExitTransition).apply {
-                                targetContentZIndex = -1f
-                            }
+                            fadeIn(tween(200)).togetherWith(slideOutVertically(tween(250), targetOffsetY = { it }) + fadeOut(tween(200)))
 
                         val defaultForwardEnter = slideInHorizontally(
-                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                            animationSpec = tween(200, easing = FastOutSlowInEasing),
                             initialOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() }
-                        ) + fadeIn(animationSpec = tween(280))
+                        ) + fadeIn(animationSpec = tween(200))
 
                         val defaultForwardExit = slideOutHorizontally(
-                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                            animationSpec = tween(200, easing = FastOutSlowInEasing),
                             targetOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() }
-                        ) + fadeOut(animationSpec = tween(220))
+                        ) + fadeOut(animationSpec = tween(200))
 
                         val defaultPopEnter = slideInHorizontally(
-                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                            animationSpec = tween(200, easing = FastOutSlowInEasing),
                             initialOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() }
-                        ) + fadeIn(animationSpec = tween(280))
+                        ) + fadeIn(animationSpec = tween(200))
 
                         val defaultPopExit = slideOutHorizontally(
-                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                            animationSpec = tween(200, easing = FastOutSlowInEasing),
                             targetOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() }
-                        ) + fadeOut(animationSpec = tween(220))
+                        ) + fadeOut(animationSpec = tween(200))
 
                         NavDisplay(
                             backStack = backStack,
+                            entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
                             onBack = {
                                 if (backStack.size > 1) {
                                     backStack.removeLastOrNull()
@@ -187,11 +141,10 @@ class MainActivity : ComponentActivity() {
                                                     MiniPlayer(
                                                         currentSong = playerState.currentSong,
                                                         isPlaying = playerState.isPlaying,
-                                                        position = playerState.position,
-                                                        duration = playerState.duration,
+                                                        viewModel = playerViewModel,
                                                         onPlayPauseClick = { playerViewModel.togglePlayPause() },
                                                         onNextClick = { playerViewModel.skipToNext() },
-                                                        onClick = { backStack.add(Screen.NowPlaying) }
+                                                        onClick = { if (backStack.lastOrNull() != Screen.NowPlaying) backStack.add(Screen.NowPlaying) }
                                                     )
                                                     NavigationBar(
                                                         containerColor = CherrySurface,
@@ -276,11 +229,10 @@ class MainActivity : ComponentActivity() {
                                                     MiniPlayer(
                                                         currentSong = playerState.currentSong,
                                                         isPlaying = playerState.isPlaying,
-                                                        position = playerState.position,
-                                                        duration = playerState.duration,
+                                                        viewModel = playerViewModel,
                                                         onPlayPauseClick = { playerViewModel.togglePlayPause() },
                                                         onNextClick = { playerViewModel.skipToNext() },
-                                                        onClick = { backStack.add(Screen.NowPlaying) }
+                                                        onClick = { if (backStack.lastOrNull() != Screen.NowPlaying) backStack.add(Screen.NowPlaying) }
                                                     )
                                                     NavigationBar(
                                                         containerColor = CherrySurface,
@@ -342,11 +294,10 @@ class MainActivity : ComponentActivity() {
                                                 MiniPlayer(
                                                     currentSong = playerState.currentSong,
                                                     isPlaying = playerState.isPlaying,
-                                                    position = playerState.position,
-                                                    duration = playerState.duration,
+                                                    viewModel = playerViewModel,
                                                     onPlayPauseClick = { playerViewModel.togglePlayPause() },
                                                     onNextClick = { playerViewModel.skipToNext() },
-                                                    onClick = { backStack.add(Screen.NowPlaying) }
+                                                    onClick = { if (backStack.lastOrNull() != Screen.NowPlaying) backStack.add(Screen.NowPlaying) }
                                                 )
                                             }
                                         ) { paddingValues ->
@@ -370,11 +321,10 @@ class MainActivity : ComponentActivity() {
                                                 MiniPlayer(
                                                     currentSong = playerState.currentSong,
                                                     isPlaying = playerState.isPlaying,
-                                                    position = playerState.position,
-                                                    duration = playerState.duration,
+                                                    viewModel = playerViewModel,
                                                     onPlayPauseClick = { playerViewModel.togglePlayPause() },
                                                     onNextClick = { playerViewModel.skipToNext() },
-                                                    onClick = { backStack.add(Screen.NowPlaying) }
+                                                    onClick = { if (backStack.lastOrNull() != Screen.NowPlaying) backStack.add(Screen.NowPlaying) }
                                                 )
                                             }
                                         ) { paddingValues ->

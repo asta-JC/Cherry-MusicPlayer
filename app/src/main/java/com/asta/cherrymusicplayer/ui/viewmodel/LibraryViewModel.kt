@@ -12,12 +12,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
 enum class LibraryTab {
-    SONGS, ALBUMS, ARTISTS, PLAYLISTS
+    SONGS, ALBUMS, ARTISTS
 }
 
 enum class SortOption {
@@ -54,6 +58,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
     private val _currentTab = MutableStateFlow(LibraryTab.SONGS)
     private val _sortOption = MutableStateFlow(SortOption.TITLE)
     private val _hasPermission = MutableStateFlow(false)
@@ -86,18 +91,12 @@ class LibraryViewModel @Inject constructor(
         Triple(permission, loading, playingId)
     }
 
-    val uiState: StateFlow<LibraryUiState> = combine(
-        filterStateFlow,
-        extraStateFlow
-    ) { filter, extra ->
+    private val filteredDataFlow = filterStateFlow.map { filter ->
         val rawData = filter.first
         val query = filter.second
         val tab = filter.third
         val sort = filter.fourth
 
-        val permission = extra.first
-        val loading = extra.second
-        val playingId = extra.third
 
         // First filter out short audio (voice messages, notifications, etc.)
         val durationFilteredSongs = rawData.songs.filter { song ->
@@ -151,11 +150,12 @@ class LibraryViewModel @Inject constructor(
             playlists = rawData.playlists,
             searchQuery = query,
             currentTab = tab,
-            sortOption = sort,
-            isLoading = loading,
-            hasPermission = permission,
-            currentPlayingSongId = playingId
+            sortOption = sort
         )
+    }.flowOn(Dispatchers.Default)
+
+    val uiState: StateFlow<LibraryUiState> = combine(filteredDataFlow, extraStateFlow) { data, extra ->
+        data.copy(hasPermission = extra.first, isLoading = extra.second, currentPlayingSongId = extra.third)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -175,8 +175,9 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun setPermissionGranted(granted: Boolean) {
+        val newlyGranted = granted && !_hasPermission.value
         _hasPermission.value = granted
-        if (granted) {
+        if (newlyGranted) {
             scanMedia()
         }
     }

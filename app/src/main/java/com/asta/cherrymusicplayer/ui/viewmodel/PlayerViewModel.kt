@@ -29,11 +29,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
 import kotlin.coroutines.resume
 
+data class PlaybackProgress(val position: Long = 0L, val duration: Long = 0L) {
+    val fraction: Float get() = if (duration > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f
+}
+
 data class PlayerUiState(
     val currentSong: SongEntity? = null,
     val isPlaying: Boolean = false,
-    val position: Long = 0L,
-    val duration: Long = 0L,
     val queue: List<SongEntity> = emptyList(),
     val currentIndex: Int = 0,
     val shuffleModeEnabled: Boolean = false,
@@ -53,6 +55,9 @@ class PlayerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
 
+    private val _progress = MutableStateFlow(PlaybackProgress())
+    val progress: StateFlow<PlaybackProgress> = _progress.asStateFlow()
+
     val allSongs = musicRepository.allSongs
     val favoriteSongs = musicRepository.favoriteSongs
     val allPlaylists = musicRepository.allPlaylists
@@ -64,6 +69,11 @@ class PlayerViewModel @Inject constructor(
 
     init {
         initializeController()
+        viewModelScope.launch {
+            _progress.subscriptionCount.collect { count ->
+                if (count > 0) startPositionUpdates() else stopPositionUpdates()
+            }
+        }
         viewModelScope.launch {
             musicRepository.allSongs.collect { songs ->
                 cachedSongsList = songs
@@ -87,7 +97,7 @@ class PlayerViewModel @Inject constructor(
                 controller.setPlaybackSpeed(savedSpeed)
 
                 updateStateFromController(controller)
-                startPositionUpdates()
+                if (_progress.subscriptionCount.value > 0) startPositionUpdates()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -113,16 +123,22 @@ class PlayerViewModel @Inject constructor(
         controller.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _uiState.update { it.copy(isPlaying = isPlaying) }
-                if (isPlaying) startPositionUpdates() else stopPositionUpdates()
+                syncProgress()
+                if (isPlaying && _progress.subscriptionCount.value > 0) startPositionUpdates() else stopPositionUpdates()
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                syncProgress()
                 updateSongFromMediaItem(mediaItem)
                 _uiState.update { it.copy(currentIndex = controller.currentMediaItemIndex) }
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 updateStateFromController(controller)
+            }
+
+            override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+                syncProgress()
             }
 
             override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
@@ -136,52 +152,53 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun updateStateFromController(controller: MediaController) {
-        val duration = if (controller.duration > 0) controller.duration else 0L
-        val position = if (controller.currentPosition >= 0) controller.currentPosition else 0L
         _uiState.update {
             it.copy(
                 isPlaying = controller.isPlaying,
-                position = position,
-                duration = duration,
                 currentIndex = controller.currentMediaItemIndex,
                 shuffleModeEnabled = controller.shuffleModeEnabled,
                 repeatMode = controller.repeatMode
             )
         }
+        val songsById = cachedSongsList.associateBy { it.id }
+        val queue = (0 until controller.mediaItemCount).map { index ->
+            val item = controller.getMediaItemAt(index)
+            songsById[item.mediaId.toLongOrNull()] ?: songFromMediaItem(item)
+        }
+        _uiState.update { it.copy(queue = queue) }
+        syncProgress()
         updateSongFromMediaItem(controller.currentMediaItem)
     }
 
     private fun updateSongFromMediaItem(mediaItem: MediaItem?) {
         val id = mediaItem?.mediaId?.toLongOrNull()
-        val song = cachedSongsList.find { it.id == id } ?: mediaItem?.let {
-            SongEntity(
-                id = id ?: 0L,
-                title = it.mediaMetadata.title?.toString() ?: "Unknown Title",
-                artist = it.mediaMetadata.artist?.toString() ?: "Unknown Artist",
-                album = it.mediaMetadata.albumTitle?.toString() ?: "Unknown Album",
-                duration = 0L,
-                data = it.localConfiguration?.uri?.toString() ?: "",
-                albumArtUri = it.mediaMetadata.artworkUri?.toString()
-            )
-        }
+        val song = cachedSongsList.find { it.id == id } ?: mediaItem?.let(::songFromMediaItem)
         _uiState.update { it.copy(currentSong = song) }
+    }
+
+    private fun songFromMediaItem(item: MediaItem): SongEntity = SongEntity(
+        id = item.mediaId.toLongOrNull() ?: 0L,
+        title = item.mediaMetadata.title?.toString() ?: "Unknown title",
+        artist = item.mediaMetadata.artist?.toString() ?: "Unknown artist",
+        album = item.mediaMetadata.albumTitle?.toString() ?: "Unknown album",
+        duration = 0L,
+        data = item.localConfiguration?.uri?.toString() ?: "",
+        albumArtUri = item.mediaMetadata.artworkUri?.toString()
+    )
+
+    private fun syncProgress() {
+        val controller = mediaController ?: return
+        _progress.value = PlaybackProgress(controller.currentPosition.coerceAtLeast(0L), controller.duration.coerceAtLeast(0L))
     }
 
     private fun startPositionUpdates() {
         positionJob?.cancel()
+        syncProgress()
+        if (mediaController?.isPlaying != true) return
         positionJob = viewModelScope.launch {
             while (true) {
-                mediaController?.let { controller ->
-                    val pos = controller.currentPosition
-                    val dur = controller.duration
-                    _uiState.update {
-                        it.copy(
-                            position = if (pos >= 0) pos else 0L,
-                            duration = if (dur > 0) dur else 0L
-                        )
-                    }
-                }
-                delay(500L)
+                syncProgress()
+                delay(250L)
             }
         }
     }
@@ -252,7 +269,7 @@ class PlayerViewModel @Inject constructor(
 
     fun seekTo(position: Long) {
         mediaController?.seekTo(position)
-        _uiState.update { it.copy(position = position) }
+        syncProgress()
     }
 
     fun toggleShuffle() {

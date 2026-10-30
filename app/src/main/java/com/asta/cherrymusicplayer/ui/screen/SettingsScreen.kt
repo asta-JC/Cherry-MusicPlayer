@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,8 +34,8 @@ fun SettingsScreen(
     playerViewModel: PlayerViewModel,
     onBackClick: () -> Unit
 ) {
-    val settingsUiState by settingsViewModel.uiState.collectAsState()
-    val playerUiState by playerViewModel.uiState.collectAsState()
+    val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
     val eqPresets = listOf(
         "Normal", "Classical", "Dance", "Flat", "Folk",
@@ -59,9 +60,9 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "SETTINGS",
+                        text = "Settings",
                         style = MaterialTheme.typography.titleLarge,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         color = CherryTextPrimary
                     )
@@ -89,19 +90,19 @@ fun SettingsScreen(
         ) {
             // Media Library & Scanner Section
             item {
-                SettingsSectionCard(title = "Device Scanner & Library", icon = Icons.AutoMirrored.Rounded.ManageSearch) {
+                SettingsSectionCard(title = "Music library", icon = Icons.AutoMirrored.Rounded.ManageSearch) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "Scan Device for Music",
+                            text = "Scan for music",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = CherryTextPrimary
                         )
                         Text(
-                            text = "Scan local storage for audio files (.mp3, .m4a, .flac, .wav, .ogg, .aac, .opus, .wma, .aiff, .alac, .mid, .mka) with duration ≥ 60s and add newly found music to your library.",
+                            text = "Find music on this phone. Tracks shorter than one minute are excluded.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = CherryTextSecondary
                         )
@@ -116,34 +117,34 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(46.dp)
+                                .heightIn(min = 48.dp)
                         ) {
                             if (settingsUiState.isScanning) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                     strokeWidth = 2.dp
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "Scanning Device...",
-                                    fontFamily = FontFamily.Monospace,
+                                    text = "Scanning…",
+                                    fontFamily = FontFamily.SansSerif,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = MaterialTheme.colorScheme.onPrimary
                                 )
                             } else {
                                 Icon(
                                     imageVector = Icons.Rounded.Refresh,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Scan Device Now",
-                                    fontFamily = FontFamily.Monospace,
+                                    text = "Scan for music",
+                                    fontFamily = FontFamily.SansSerif,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         }
@@ -167,12 +168,12 @@ fun SettingsScreen(
                                         text = settingsUiState.scanStatusMessage!!,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = CherryPrimary,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = FontFamily.SansSerif,
                                         modifier = Modifier.weight(1f)
                                     )
                                     IconButton(
                                         onClick = { settingsViewModel.clearScanMessage() },
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(48.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.Close,
@@ -194,7 +195,7 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Hidden Music",
+                                    text = "Hidden music",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = CherryTextPrimary
@@ -218,9 +219,9 @@ fun SettingsScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Unhide All",
+                                    text = "Restore all",
                                     color = CherryTextPrimary,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = FontFamily.SansSerif,
                                     style = MaterialTheme.typography.labelMedium
                                 )
                             }
@@ -229,58 +230,37 @@ fun SettingsScreen(
                 }
             }
 
-            // Theme Glow Section
             item {
-                SettingsSectionCard(title = "Appearance & Glow", icon = Icons.Rounded.Lightbulb) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Theme Glow Effect",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = CherryTextPrimary
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Enable soft red radial glow behind UI content",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = CherryTextSecondary
-                            )
+                SettingsSectionCard(title = "Appearance", icon = Icons.Rounded.Palette) {
+                    Text("Choose your theme", style = MaterialTheme.typography.bodyLarge)
+                    com.asta.cherrymusicplayer.data.preferences.ThemeMode.entries.forEach { mode ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                                .clickable { settingsViewModel.setThemeMode(mode) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = settingsUiState.themeMode == mode,
+                                onClick = { settingsViewModel.setThemeMode(mode) })
+                            Text(mode.label)
                         }
-                        Switch(
-                            checked = settingsUiState.darkThemeGlow,
-                            onCheckedChange = { settingsViewModel.setDarkThemeGlow(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = CherryPrimary,
-                                uncheckedThumbColor = CherryTextSecondary,
-                                uncheckedTrackColor = CherrySurface
-                            )
-                        )
                     }
                 }
             }
 
-            // Playback Speed Section
+            // Playback speed Section
             item {
-                SettingsSectionCard(title = "Playback Speed", icon = Icons.Rounded.Speed) {
+                SettingsSectionCard(title = "Playback speed", icon = Icons.Rounded.Speed) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Current Speed: ${String.format(java.util.Locale.US, "%.2fx", settingsUiState.playbackSpeed)}",
+                                text = "Current speed: ${String.format(java.util.Locale.US, "%.2fx", settingsUiState.playbackSpeed)}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = CherryPrimary,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
+                                fontFamily = FontFamily.SansSerif
                             )
                             TextButton(onClick = { playerViewModel.setPlaybackSpeed(1.0f) }) {
                                 Text("Reset to 1.0x", color = CherryTextSecondary)
@@ -309,7 +289,7 @@ fun SettingsScreen(
                                         text = "${speed}x",
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         style = MaterialTheme.typography.bodyMedium,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = FontFamily.SansSerif,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         color = if (isSelected) CherryPrimary else CherryTextPrimary
                                     )
@@ -320,9 +300,9 @@ fun SettingsScreen(
                 }
             }
 
-            // Equalizer Presets Section
+            // Equalizer presets Section
             item {
-                SettingsSectionCard(title = "Equalizer Presets", icon = Icons.Rounded.Equalizer) {
+                SettingsSectionCard(title = "Equalizer presets", icon = Icons.Rounded.Equalizer) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = "Select sound profile preset",
@@ -372,9 +352,9 @@ fun SettingsScreen(
                 }
             }
 
-            // Sleep Timer Section
+            // Sleep timer Section
             item {
-                SettingsSectionCard(title = "Sleep Timer", icon = Icons.Rounded.Timer) {
+                SettingsSectionCard(title = "Sleep timer", icon = Icons.Rounded.Timer) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         if (playerUiState.sleepTimerMinutes != null && playerUiState.sleepTimerRemainingMillis != null) {
                             val remainingMinutes = (playerUiState.sleepTimerRemainingMillis!! / 1000 / 60) + 1
@@ -422,7 +402,7 @@ fun SettingsScreen(
                                         text = label,
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                         style = MaterialTheme.typography.bodyMedium,
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = FontFamily.SansSerif,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         color = if (isSelected) CherryPrimary else CherryTextPrimary
                                     )
@@ -442,15 +422,15 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Cherry Music Player // Asta v1.0",
+                            text = "Cherry Music · v1.0",
                             style = MaterialTheme.typography.bodyLarge,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.Bold,
                             color = CherryPrimary,
                             textAlign = TextAlign.Center
                         )
                         Text(
-                            text = "Futuristic local music experience crafted with Material 3 & Jetpack Compose.",
+                            text = "Your music, close at hand. Made with care by Asta.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = CherryTextSecondary,
                             textAlign = TextAlign.Center
@@ -496,7 +476,7 @@ fun SettingsSectionCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = CherryTextPrimary,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.SansSerif
                 )
             }
             HorizontalDivider(color = CherryBorder.copy(alpha = 0.5f))

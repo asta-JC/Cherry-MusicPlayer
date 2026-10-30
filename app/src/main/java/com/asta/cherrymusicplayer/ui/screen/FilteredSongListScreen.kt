@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -28,8 +29,8 @@ fun FilteredSongListScreen(
     playerViewModel: PlayerViewModel,
     onBackClick: () -> Unit
 ) {
-    val uiState by libraryViewModel.uiState.collectAsState()
-    val playerUiState by playerViewModel.uiState.collectAsState()
+    val uiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
+    val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
     // Filter songs according to the filterType and filterValue
     val matchingSongs = remember(uiState.songs, filterType, filterValue) {
@@ -59,14 +60,14 @@ fun FilteredSongListScreen(
             },
             title = {
                 Text(
-                    text = "Hide Song",
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    text = "Hide song",
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    text = "Hide \"${song.title}\" from your library? You will never see it here again.",
+                    text = "Hide \"${song.title}\" from your library? You can restore hidden songs in Settings.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -81,9 +82,9 @@ fun FilteredSongListScreen(
                 ) {
                     Text(
                         text = "Hide",
-                        color = androidx.compose.ui.graphics.Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif
                     )
                 }
             },
@@ -96,7 +97,7 @@ fun FilteredSongListScreen(
                     Text(
                         text = "Cancel",
                         color = CherryTextSecondary,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif
                     )
                 }
             }

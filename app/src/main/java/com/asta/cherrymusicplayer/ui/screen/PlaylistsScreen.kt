@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +38,7 @@ fun PlaylistsScreen(
     onPlaylistClick: (PlaylistEntity?) -> Unit,
     onSettingsClick: () -> Unit = {}
 ) {
-    val uiState by libraryViewModel.uiState.collectAsState()
+    val uiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
     var showCreateDialog by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
 
@@ -48,9 +49,9 @@ fun PlaylistsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "PLAYLISTS",
+                        text = "Playlists",
                         style = MaterialTheme.typography.titleLarge,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         color = CherryTextPrimary
                     )
@@ -107,6 +108,7 @@ fun PlaylistsScreen(
                         ) {
                             CherryIcon(
                                 filled = true,
+                                contentDescription = null,
                                 size = 28.dp
                             )
                         }
@@ -133,9 +135,20 @@ fun PlaylistsScreen(
                 }
             }
 
-            items(uiState.playlists) { playlist ->
+            if (uiState.playlists.isEmpty()) {
+                item {
+                    Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("A playlist for every mood", style = MaterialTheme.typography.titleMedium)
+                        Text("Bring your favorite songs together.", color = CherryTextSecondary)
+                        Button(onClick = { showCreateDialog = true }) { Icon(Icons.Rounded.Add, null); Spacer(Modifier.width(8.dp)); Text("Create playlist") }
+                    }
+                }
+            }
+            items(uiState.playlists, key = { it.id }) { playlist ->
                 var showOptions by remember { mutableStateOf(false) }
                 var showRenameDialog by remember { mutableStateOf(false) }
+                var showDeleteDialog by remember { mutableStateOf(false) }
                 var renameText by remember { mutableStateOf(playlist.name) }
 
                 Card(
@@ -176,7 +189,7 @@ fun PlaylistsScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Custom Playlist",
+                                text = "Playlist",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = CherryTextSecondary
                             )
@@ -203,10 +216,10 @@ fun PlaylistsScreen(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete", color = Color.Red) },
+                                    text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showOptions = false
-                                        playerViewModel.deletePlaylist(playlist.id)
+                                        showDeleteDialog = true
                                     }
                                 )
                             }
@@ -214,16 +227,25 @@ fun PlaylistsScreen(
                     }
                 }
 
+                if (showDeleteDialog) {
+                    AlertDialog(onDismissRequest = { showDeleteDialog = false },
+                        title = { Text("Delete playlist?") },
+                        text = { Text("Remove “${playlist.name}”? Your music files will stay on this phone.") },
+                        confirmButton = { TextButton(onClick = { playerViewModel.deletePlaylist(playlist.id); showDeleteDialog = false }) {
+                            Text("Delete", color = MaterialTheme.colorScheme.error)
+                        } },
+                        dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") } })
+                }
                 if (showRenameDialog) {
                     AlertDialog(
                         onDismissRequest = { showRenameDialog = false },
                         containerColor = CherrySurface,
-                        title = { Text("Rename Playlist", color = CherryTextPrimary) },
+                        title = { Text("Rename playlist", color = CherryTextPrimary) },
                         text = {
                             OutlinedTextField(
                                 value = renameText,
                                 onValueChange = { renameText = it },
-                                label = { Text("New Name") },
+                                label = { Text("New name") },
                                 singleLine = true
                             )
                         },
@@ -254,12 +276,12 @@ fun PlaylistsScreen(
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
             containerColor = CherrySurface,
-            title = { Text("Create Playlist", color = CherryTextPrimary) },
+            title = { Text("Create playlist", color = CherryTextPrimary) },
             text = {
                 OutlinedTextField(
                     value = newPlaylistName,
                     onValueChange = { newPlaylistName = it },
-                    label = { Text("Playlist Name") },
+                    label = { Text("Playlist name") },
                     singleLine = true
                 )
             },
@@ -294,14 +316,12 @@ fun PlaylistDetailScreen(
     playerViewModel: PlayerViewModel,
     onBackClick: () -> Unit
 ) {
-    val songsFlow = if (playlistId == null) {
-        playerViewModel.favoriteSongs
-    } else {
-        playerViewModel.getSongsForPlaylist(playlistId)
+    val songsFlow = remember(playlistId, playerViewModel) {
+        if (playlistId == null) playerViewModel.favoriteSongs else playerViewModel.getSongsForPlaylist(playlistId)
     }
-    val songs by songsFlow.collectAsState(initial = emptyList())
-    val allSongs by libraryViewModel.uiState.collectAsState()
-    val playerUiState by playerViewModel.uiState.collectAsState()
+    val songs by songsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    val allSongs by libraryViewModel.uiState.collectAsStateWithLifecycle()
+    val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
     var showAddSongsDialog by remember { mutableStateOf(false) }
 
@@ -330,7 +350,11 @@ fun PlaylistDetailScreen(
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
             if (songs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No songs in this playlist", color = CherryTextSecondary)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(if (playlistId == null) "Your favorites belong here" else "Make this playlist yours", style = MaterialTheme.typography.titleMedium)
+                        Text(if (playlistId == null) "Tap the cherry beside a song to save it." else "Add a few songs to get started.", color = CherryTextSecondary)
+                        if (playlistId != null) Button(onClick = { showAddSongsDialog = true }) { Text("Add songs") }
+                    }
                 }
             } else {
                 LazyColumn(
@@ -338,124 +362,14 @@ fun PlaylistDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(songs, key = { it.id }) { song ->
-                        val isPlaying = song.id == playerUiState.currentSong?.id
-                        val durationFormatted = remember(song.duration) {
-                            val minutes = (song.duration / 1000) / 60
-                            val seconds = (song.duration / 1000) % 60
-                            String.format("%d:%02d", minutes, seconds)
-                        }
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .border(
-                                    width = if (isPlaying) 1.5.dp else 1.dp,
-                                    color = if (isPlaying) CherryPrimary else CherryBorder,
-                                    shape = RoundedCornerShape(14.dp)
-                                )
-                                .clickable { playerViewModel.playSong(song, songs) },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isPlaying) CherryHighlight else CherrySurface
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(52.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(CherryBackground),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (!song.albumArtUri.isNullOrEmpty()) {
-                                        coil.compose.AsyncImage(
-                                            model = song.albumArtUri,
-                                            contentDescription = song.album,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Rounded.MusicNote,
-                                            contentDescription = null,
-                                            tint = CherryPrimary,
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                    }
-
-                                    if (isPlaying) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(CherryPrimary.copy(alpha = 0.3f)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
-                                                contentDescription = "Playing",
-                                                tint = Color.White,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Column(
-                                    modifier = Modifier.weight(1.5f),
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = song.title,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isPlaying) CherryPrimary else CherryTextPrimary,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "${song.artist} • ${song.album}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = CherryTextSecondary,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = durationFormatted,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontFamily = FontFamily.Monospace,
-                                        color = CherryTextSecondary
-                                    )
-                                    IconButton(onClick = { playerViewModel.toggleFavorite(song) }) {
-                                        CherryIcon(
-                                            filled = song.isFavorite,
-                                            size = 24.dp
-                                        )
-                                    }
-                                    if (playlistId != null) {
-                                        IconButton(onClick = { playerViewModel.removeSongFromPlaylist(playlistId, song.id) }) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Delete,
-                                                contentDescription = "Remove",
-                                                tint = CherryTextSecondary
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        SongItemCard(
+                            song = song,
+                            isPlaying = song.id == playerUiState.currentSong?.id,
+                            onClick = { playerViewModel.playSong(song, songs) },
+                            onFavoriteClick = { playerViewModel.toggleFavorite(song) },
+                            onLongClick = if (playlistId != null) ({ playerViewModel.removeSongFromPlaylist(playlistId, song.id) }) else null,
+                            overflowLabel = "Remove from playlist"
+                        )
                     }
                 }
             }
@@ -467,13 +381,13 @@ fun PlaylistDetailScreen(
         AlertDialog(
             onDismissRequest = { showAddSongsDialog = false },
             containerColor = CherrySurface,
-            title = { Text("Add Songs to Playlist", color = CherryTextPrimary) },
+            title = { Text("Add songs to playlist", color = CherryTextPrimary) },
             text = {
                 LazyColumn(
                     modifier = Modifier.height(300.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(allAvailableSongs) { song ->
+                    items(allAvailableSongs, key = { it.id }) { song ->
                         val inPlaylist = songs.any { it.id == song.id }
                         Row(
                             modifier = Modifier

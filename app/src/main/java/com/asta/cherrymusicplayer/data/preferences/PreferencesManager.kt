@@ -16,6 +16,14 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+enum class ThemeMode(val label: String) {
+    SYSTEM("System"), LIGHT("Light"), DARK("Dark");
+
+    companion object {
+        fun fromStored(value: String?): ThemeMode = entries.firstOrNull { it.name == value } ?: SYSTEM
+    }
+}
+
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "cherry_preferences")
 
 @Singleton
@@ -23,6 +31,7 @@ class PreferencesManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private object PreferencesKeys {
+        val THEME_MODE = stringPreferencesKey("theme_mode")
         val DARK_THEME_GLOW = booleanPreferencesKey("dark_theme_glow")
         val LAST_PLAYED_SONG_ID = longPreferencesKey("last_played_song_id")
         val SHUFFLE_MODE = booleanPreferencesKey("shuffle_mode")
@@ -31,6 +40,13 @@ class PreferencesManager @Inject constructor(
         val LAST_PLAYBACK_POSITION = longPreferencesKey("last_playback_position")
         val EQUALIZER_PRESET = stringPreferencesKey("equalizer_preset")
         val MIN_SONG_DURATION = longPreferencesKey("min_song_duration_ms")
+    }
+
+    val themeModeFlow: Flow<ThemeMode> = context.dataStore.data
+        .map { ThemeMode.fromStored(it[PreferencesKeys.THEME_MODE]) }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { it[PreferencesKeys.THEME_MODE] = mode.name }
     }
 
     val darkThemeGlowFlow: Flow<Boolean> = context.dataStore.data

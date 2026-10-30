@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,11 +25,18 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.*
+import com.asta.cherrymusicplayer.R
+import com.asta.cherrymusicplayer.ui.component.SongArtwork
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -58,7 +66,9 @@ fun LibraryScreen(
     onPlaylistClick: (PlaylistEntity) -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var searchQuery by rememberSaveable { mutableStateOf(viewModel.searchQuery.value) }
+    val changeSearch: (String) -> Unit = { searchQuery = it; viewModel.updateSearchQuery(it) }
     val context = LocalContext.current
     var songToHide by remember { mutableStateOf<SongEntity?>(null) }
 
@@ -101,14 +111,14 @@ fun LibraryScreen(
             },
             title = {
                 Text(
-                    text = "Hide Song",
-                    fontFamily = FontFamily.Monospace,
+                    text = "Hide song",
+                    fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    text = "Hide \"${song.title}\" from your library? You will never see it here again.",
+                    text = "Hide \"${song.title}\" from your library? You can restore hidden songs in Settings.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -123,9 +133,9 @@ fun LibraryScreen(
                 ) {
                     Text(
                         text = "Hide",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.SansSerif
                     )
                 }
             },
@@ -138,7 +148,7 @@ fun LibraryScreen(
                     Text(
                         text = "Cancel",
                         color = CherryTextSecondary,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.SansSerif
                     )
                 }
             }
@@ -162,31 +172,32 @@ fun LibraryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
+                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(Color(0xFFFF1744), CherryPrimary)
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                ),
+                                .size(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.MusicNote,
-                                contentDescription = "Logo",
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
+                            Image(
+                                painter = painterResource(
+                                    if (CherryBackground.luminance() < .5f) R.drawable.cherryapps_logo_full_dark
+                                    else R.drawable.cherryapps_logo_full
+                                ),
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize().padding(2.dp)
                             )
                         }
                         Text(
-                            text = "CHERRY PLAYER",
+                            text = "Cherry Music",
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.titleLarge,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.Bold,
                             color = CherryTextPrimary
                         )
@@ -262,11 +273,11 @@ fun LibraryScreen(
 
                 // Pill-shaped Search Bar
                 OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = { viewModel.updateSearchQuery(it) },
+                    value = searchQuery,
+                    onValueChange = changeSearch,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(54.dp),
+                        .heightIn(min = 56.dp),
                     placeholder = {
                         Text(
                             "Search songs, albums, artists...",
@@ -282,8 +293,8 @@ fun LibraryScreen(
                         )
                     },
                     trailingIcon = {
-                        if (uiState.searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.updateSearchQuery("") }) {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { changeSearch("") }) {
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
                                     contentDescription = "Clear",
@@ -319,8 +330,7 @@ fun LibraryScreen(
                     val tabs = listOf(
                         LibraryTab.SONGS to "Songs",
                         LibraryTab.ALBUMS to "Albums",
-                        LibraryTab.ARTISTS to "Artists",
-                        LibraryTab.PLAYLISTS to "Playlists"
+                        LibraryTab.ARTISTS to "Artists"
                     )
                     tabs.forEach { (tab, title) ->
                         val selected = uiState.currentTab == tab
@@ -330,7 +340,7 @@ fun LibraryScreen(
                             text = {
                                 Text(
                                     text = title,
-                                    fontFamily = FontFamily.Monospace,
+                                    fontFamily = FontFamily.SansSerif,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                                     color = if (selected) CherryPrimary else CherryTextSecondary
                                 )
@@ -375,7 +385,7 @@ fun LibraryScreen(
                     Text(
                         text = "Storage Permission Required",
                         style = MaterialTheme.typography.titleLarge,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = FontFamily.SansSerif,
                         color = CherryTextPrimary,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
@@ -396,10 +406,10 @@ fun LibraryScreen(
                             .defaultMinSize(minWidth = 180.dp)
                     ) {
                         Text(
-                            text = "Grant Permission",
-                            fontFamily = FontFamily.Monospace,
+                            text = "Allow music access",
+                            fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -409,10 +419,19 @@ fun LibraryScreen(
                     CircularProgressIndicator(color = CherryPrimary)
                 }
             } else {
-                when (uiState.currentTab) {
+                val noResults = uiState.searchQuery.isNotBlank() && when (uiState.currentTab) {
+                    LibraryTab.SONGS -> uiState.songs.isEmpty()
+                    LibraryTab.ALBUMS -> uiState.albums.isEmpty()
+                    LibraryTab.ARTISTS -> uiState.artists.isEmpty()
+                }
+                if (noResults) {
+                    EmptyStateView("No matches", "Try a different song, artist, or album.", "Clear search") {
+                        changeSearch("")
+                    }
+                } else when (uiState.currentTab) {
                     LibraryTab.SONGS -> {
                         if (uiState.songs.isEmpty()) {
-                            EmptyStateView("No Songs Found", "Scan your device for mp3, m4a, flac, wav, or ogg files.") {
+                            EmptyStateView("Your music starts here", "Scan your device for mp3, m4a, flac, wav, or ogg files.") {
                                 viewModel.scanMedia()
                             }
                         } else {
@@ -442,7 +461,7 @@ fun LibraryScreen(
                     }
                     LibraryTab.ALBUMS -> {
                         if (uiState.albums.isEmpty()) {
-                            EmptyStateView("No Albums Found", "Albums will appear after scanning music files.") {
+                            EmptyStateView("No albums yet", "Albums will appear after scanning music files.") {
                                 viewModel.scanMedia()
                             }
                         } else {
@@ -464,7 +483,7 @@ fun LibraryScreen(
                     }
                     LibraryTab.ARTISTS -> {
                         if (uiState.artists.isEmpty()) {
-                            EmptyStateView("No Artists Found", "Artists will appear after scanning music files.") {
+                            EmptyStateView("No artists yet", "Artists will appear after scanning music files.") {
                                 viewModel.scanMedia()
                             }
                         } else {
@@ -482,26 +501,7 @@ fun LibraryScreen(
                             }
                         }
                     }
-                    LibraryTab.PLAYLISTS -> {
-                        if (uiState.playlists.isEmpty()) {
-                            EmptyStateView("No Playlists Yet", "Create playlists to organize your favorite cherry tracks.") {
-                                // Action to create playlist
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(uiState.playlists, key = { it.id }) { playlist ->
-                                    PlaylistItemCard(
-                                        playlist = playlist,
-                                        onClick = { onPlaylistClick(playlist) }
-                                    )
-                                }
-                            }
-                        }
-                    }
+
                 }
             }
         }
@@ -514,9 +514,11 @@ fun SongItemCard(
     song: SongEntity,
     isPlaying: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit = {},
-    onFavoriteClick: () -> Unit
+    onLongClick: (() -> Unit)? = null,
+    onFavoriteClick: () -> Unit,
+    overflowLabel: String = "Hide song"
 ) {
+    var showOptions by remember { mutableStateOf(false) }
     val durationFormatted = remember(song.duration) {
         val minutes = (song.duration / 1000) / 60
         val seconds = (song.duration / 1000) % 60
@@ -532,6 +534,7 @@ fun SongItemCard(
                 color = if (isPlaying) CherryPrimary else CherryBorder,
                 shape = RoundedCornerShape(14.dp)
             )
+            .semantics { selected = isPlaying }
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
@@ -543,32 +546,17 @@ fun SongItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(
                 modifier = Modifier
                     .size(52.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(CherryBackground),
+                    .clip(RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!song.albumArtUri.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = song.albumArtUri,
-                        contentDescription = song.album,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Rounded.MusicNote,
-                        contentDescription = null,
-                        tint = CherryPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
+                SongArtwork(song.albumArtUri, Modifier.fillMaxSize())
 
                 if (isPlaying) {
                     Box(
@@ -579,7 +567,7 @@ fun SongItemCard(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
-                            contentDescription = "Playing",
+                            contentDescription = "Current song",
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
@@ -601,7 +589,7 @@ fun SongItemCard(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "${song.artist} • ${song.album}",
+                    text = "${song.artist} · $durationFormatted",
                     style = MaterialTheme.typography.bodyMedium,
                     color = CherryTextSecondary,
                     maxLines = 1,
@@ -611,19 +599,22 @@ fun SongItemCard(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                Text(
-                    text = durationFormatted,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = FontFamily.Monospace,
-                    color = CherryTextSecondary
-                )
-                IconButton(onClick = onFavoriteClick) {
+                IconButton(onClick = onFavoriteClick, modifier = Modifier.semantics { selected = song.isFavorite }) {
                     CherryIcon(
                         filled = song.isFavorite,
                         size = 24.dp
                     )
+                }
+                if (onLongClick != null) {
+                    Box {
+                        IconButton(onClick = { showOptions = true }) { Icon(Icons.Rounded.MoreVert, "More options for ${song.title}") }
+                        DropdownMenu(expanded = showOptions, onDismissRequest = { showOptions = false }) {
+                            DropdownMenuItem(text = { Text(overflowLabel) }, leadingIcon = { Icon(if (overflowLabel == "Hide song") Icons.Rounded.VisibilityOff else Icons.Rounded.RemoveCircleOutline, null) },
+                                onClick = { showOptions = false; onLongClick() })
+                        }
+                    }
                 }
             }
         }
@@ -650,25 +641,10 @@ fun AlbumItemCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(CherryBackground),
+                    .clip(RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!album.artUri.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = album.artUri,
-                        contentDescription = album.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Rounded.Album,
-                        contentDescription = null,
-                        tint = CherryPrimary,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
+                SongArtwork(album.artUri, Modifier.fillMaxSize())
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -786,7 +762,7 @@ fun PlaylistItemCard(
                     color = CherryTextPrimary
                 )
                 Text(
-                    text = "Custom Playlist",
+                    text = "Playlist",
                     style = MaterialTheme.typography.bodyMedium,
                     color = CherryTextSecondary
                 )
@@ -796,7 +772,7 @@ fun PlaylistItemCard(
 }
 
 @Composable
-fun EmptyStateView(title: String, subtitle: String, onActionClick: () -> Unit) {
+fun EmptyStateView(title: String, subtitle: String, actionLabel: String = "Scan for music", onActionClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -814,7 +790,7 @@ fun EmptyStateView(title: String, subtitle: String, onActionClick: () -> Unit) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = FontFamily.SansSerif,
             color = CherryTextPrimary,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
@@ -832,10 +808,10 @@ fun EmptyStateView(title: String, subtitle: String, onActionClick: () -> Unit) {
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(
-                text = "Scan Device",
-                fontFamily = FontFamily.Monospace,
+                text = actionLabel,
+                fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onPrimary
             )
         }
     }

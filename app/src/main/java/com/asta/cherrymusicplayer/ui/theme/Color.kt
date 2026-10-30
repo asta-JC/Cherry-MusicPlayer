@@ -1,13 +1,14 @@
 package com.asta.cherrymusicplayer.ui.theme
 
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 
-val CherryBackground = Color(0xFF0A0A0F)
-val CherrySurface = Color(0xFF1A1423)
-val CherryBorder = Color(0xFF8A1F3D)
-val CherryPrimary = Color(0xFFFF2D6F)
-val CherryPrimaryDark = Color(0xFFFF1744)
-val CherryTextPrimary = Color(0xFFFFFFFF)
-val CherryTextSecondary = Color(0xFF9A8A99)
-val CherryCardColor = Color(0xFF140F1C)
-val CherryHighlight = Color(0xFF2A1220)
+val CherryBackground @Composable get() = MaterialTheme.colorScheme.background
+val CherrySurface @Composable get() = MaterialTheme.colorScheme.surface
+val CherryBorder @Composable get() = MaterialTheme.colorScheme.outlineVariant
+val CherryPrimary @Composable get() = MaterialTheme.colorScheme.primary
+val CherryPrimaryDark @Composable get() = MaterialTheme.colorScheme.primary
+val CherryTextPrimary @Composable get() = MaterialTheme.colorScheme.onSurface
+val CherryTextSecondary @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+val CherryCardColor @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+val CherryHighlight @Composable get() = MaterialTheme.colorScheme.primaryContainer

@@ -1,107 +1,140 @@
 <div align="center">
-
-# 🍒 Cherry Music Player
-
-<p align="center">
-  <img src="app/src/main/res/drawable/icon.png" width="108" alt="Cherry Music Player Logo" />
-</p>
-
-> An immersive local audio player for Android featuring Jetpack Media3 ExoPlayer, rich audio format support, and glowing neon cherry playback UI. 🎵✨
-
+  <img src="docs/assets/app-icon.svg" width="96" alt="Cherry Music Player original app icon" />
+  <h1>Cherry Music Player</h1>
+  <p><strong>Your music, close at hand.</strong></p>
+  <p>A local audio player for Android, with a searchable library, personal playlists, and a soft cherry interface.</p>
+  <p>
+    <img src="https://img.shields.io/badge/version-1.0-AF294A?style=flat-square" alt="Version 1.0" />
+    <img src="https://img.shields.io/badge/Android-7.0%2B-526B4E?style=flat-square" alt="Android 7.0 and newer" />
+    <img src="https://img.shields.io/badge/built_with-Kotlin_%26_Compose-78616B?style=flat-square" alt="Built with Kotlin and Jetpack Compose" />
+  </p>
+  <p>
+    <a href="#screenshots">Screenshots</a> ·
+    <a href="#features">Features</a> ·
+    <a href="#getting-started">Get started</a> ·
+    <a href="https://github.com/asta-JC/Cherry-MusicPlayer/issues">Feedback</a>
+  </p>
 </div>
 
 ---
 
-## 📱 Overview
+## Overview
 
-**Cherry Music Player** is a feature-rich, offline music player built with Jetpack Compose and Jetpack Media3 ExoPlayer. It scans local device storage for audio tracks, organizes your library by songs, artists, and albums, supports custom playlists, and provides an immersive Now Playing experience with glowing album artwork and background audio playback controls.
+Cherry Music Player brings the audio already on your phone into one library. Browse songs, albums, and artists, save favorites and playlists, and keep listening in the background. Warm light and plum dark themes put the music first, with the original music-note launcher icon and shared CherryApp accents inside the app.
 
----
+## Screenshots
 
-## ✨ Key Features
+<table>
+  <tr><th width="50%">Your library</th><th width="50%">Now playing</th></tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/library-dark.png" width="300" alt="Cherry Music dark library with search, songs, albums, artists, and cherry favorite controls" /></td>
+    <td align="center"><img src="docs/screenshots/player-light.png" width="300" alt="Cherry Music light player with album artwork, seeking, playback controls, queue, and sleep timer" /></td>
+  </tr>
+  <tr><td align="center">Find a song. Save a favorite.</td><td align="center">More room for the music.</td></tr>
+</table>
 
-- 🎧 **Media3 ExoPlayer Engine**: Robust, low-latency audio playback service with background notification controls and lock screen media session support.
-- 📂 **Multi-Format Local Playback**: Comprehensive support for `.mp3`, `.m4a`, `.flac`, `.wav`, `.aac`, `.ogg`, and `.opus` formats.
-- 🎨 **Cherry Glow Player**: Visually stunning Now Playing screen with album art ambient glow, interactive seekbar, and repeat/shuffle modes.
-- 🗂️ **Library & Playlist Management**: Instant fast search, sorting (by title, artist, date, duration), favorites, and custom playlist creation.
-- 🚫 **Hide Song Feature**: Clean up ringtones, voice memos, and unwanted audio clips permanently from library views.
-- 🔍 **Artist & Album Drill-Down**: Deep dive into dedicated album and artist views with sorted song tracks.
+Captured from the running app on a physical Samsung Galaxy S22 Ultra (SM-S908N). The player and library show local music from the device; songs are not bundled with the app. System status and navigation bars are omitted from the gallery captures.
 
----
+## Features
 
-## 📸 Screenshots & UI Preview
+- **A local music library:** scan device audio, search by song, artist, or album, and sort by title, artist, or date added.
+- **Favorites and playlists:** mark favorites with a cherry, create and rename playlists, and add or remove tracks.
+- **A focused player:** still album artwork, seek-on-release controls, a playback queue, shuffle, and repeat modes.
+- **Background listening:** Media3 playback with system notification and media-session controls.
+- **Personal playback:** playback speed, player volume, and a sleep timer that pauses the music.
+- **A quieter interface:** saved System, Light, and Dark appearance choices, plus hiding unwanted songs and restoring them from Settings.
 
-| Library | Playlists | Settings |
-| :---: | :---: | :---: |
-| <img src="screenshots/library.jpg" width="220" alt="Library Screen" /> | <img src="screenshots/playlists.jpg" width="220" alt="Playlists Screen" /> | <img src="screenshots/settings.jpg" width="220" alt="Settings Screen" /> |
+## Compatibility
 
----
+| Area | Behavior |
+| :--- | :--- |
+| Android | Android 7.0 / API 24 or newer; requests audio access to find local music |
+| Common audio | MP3, M4A/AAC, FLAC, WAV, OGG, and Opus; actual decoding depends on the file and device codecs |
+| Library scanning | Includes files marked as music by Android and at least 60 seconds long |
+| Artwork | Uses local album artwork when available, with a cherry fallback for missing or unreadable covers |
+| Storage | Favorites, playlists, hidden tracks, and appearance preferences stay in the app's local database/preferences |
 
-## 🛠️ Tech Stack & Architecture
+This is a local-file player; streaming and music downloads are not included. Equalizer preset selection is currently a saved preference and does not apply audio effects. The sleep timer belongs to the running app session.
 
-- **UI Toolkit**: [Jetpack Compose](https://developer.android.com/jetpack/compose) & [Material 3](https://m3.material.io/)
-- **Audio Engine**: [Jetpack Media3 ExoPlayer](https://developer.android.com/guide/topics/media/media3) (`androidx.media3`)
-- **Navigation**: Jetpack Navigation 3 (`androidx.navigation3`)
-- **Dependency Injection**: [Hilt](https://dagger.dev/hilt/) (Dagger)
-- **Local Storage**: Room Database & DataStore Preferences
-- **Image Loading**: [Coil Compose](https://coil-kt.github.io/coil/)
-- **Concurrency**: Kotlin Coroutines & `StateFlow`
+## Getting started
 
----
+### Requirements
 
-## 📂 Project Structure
+- A physical Android device running Android 7.0 / API 24 or newer.
+- Android Studio compatible with the pinned Android Gradle Plugin and Gradle versions.
+- Android SDK 37 and JDK 25, as selected by the Gradle daemon toolchain configuration. The app targets Java 11 bytecode.
 
-```tree
-com.asta.cherrymusic/
-├── data/                   # Audio metadata scan, Room database, DAOs, repositories
-├── di/                     # Hilt DI modules (MediaModule, DatabaseModule)
-├── service/                # MediaSessionService, playback notifications, ExoPlayer
-├── ui/                     # Compose screens (Library, NowPlaying, Playlists, Settings)
-├── CherryMusicApplication.kt # Application class
-└── MainActivity.kt         # Entry point activity & navigation host
+### Build and run
+
+```bash
+git clone https://github.com/asta-JC/Cherry-MusicPlayer.git
+cd Cherry-MusicPlayer
+./gradlew :app:assembleDebug
 ```
 
----
+The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. Connect your physical phone with USB debugging enabled, then install and open it:
 
-## 🚀 Getting Started & Build Instructions
+```bash
+adb devices -l
+adb -s YOUR_DEVICE_SERIAL install -r app/build/outputs/apk/debug/app-debug.apk
+adb -s YOUR_DEVICE_SERIAL shell am start -n com.asta.cherrymusicplayer/.MainActivity
+```
 
-### Prerequisites
-- Android Studio Ladybug or newer
-- JDK 17 or higher
-- Android SDK 24+ (Target SDK 35)
+Allow music access when prompted. Scan for music from Settings if newly added files do not appear.
 
-### Build Steps
+### Tests
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/asta-JC/Cherry-MusicPlayer.git
-   cd Cherry-MusicPlayer
-   ```
+```bash
+./gradlew :app:testDebugUnitTest :app:lintDebug
+ANDROID_SERIAL=YOUR_DEVICE_SERIAL ./gradlew :app:connectedDebugAndroidTest
+```
 
-2. **Open in Android Studio**:
-   - Open Android Studio and select **Open**.
-   - Navigate to the cloned `Cherry-MusicPlayer` directory and let Gradle sync.
+The focused tests cover seek interactions, progress bounds, theme defaults, and persisted appearance choices. Instrumented tests run on the connected physical device.
 
-3. **Build & Run**:
-   - Connect an Android device or start an emulator.
-   - Run the app via Android Studio or execute via terminal:
-     ```bash
-     ./gradlew :app:assembleDebug
-     ```
+## Built with
 
-4. **Run Unit Tests**:
-   ```bash
-   ./gradlew test
-   ```
+| Layer | Technology |
+| :--- | :--- |
+| Interface | Kotlin, Jetpack Compose, Material 3 |
+| Navigation | Jetpack Navigation 3 |
+| Audio | Media3 ExoPlayer and MediaSessionService |
+| Local data | Room and DataStore Preferences |
+| Images | Coil |
+| State and dependencies | Coroutines, StateFlow, Hilt |
 
----
+<details>
+<summary>Source map</summary>
 
-## 📄 License
+```text
+app/src/main/java/com/asta/cherrymusicplayer/
+├── data/       # Music scanning, database, playlists, preferences
+├── di/         # Hilt dependency modules
+├── service/    # Background audio and media session
+└── ui/         # Library, player, playlists, settings, shared theme
+```
+
+</details>
+
+## What's new in 1.0
+
+- Softer light and dark themes with the full CherryApp header mark.
+- Clearer library actions, artwork fallbacks, and playlist controls.
+- Shorter transitions, isolated progress updates, and seeking on release.
+- The original music-note launcher icon is preserved.
+
+## Feedback
+
+Found a playback or interface issue? [Open an issue](https://github.com/asta-JC/Cherry-MusicPlayer/issues) with the Android version, device model, audio format, and steps to reproduce it. Use a small, non-sensitive sample if a file is needed.
+
+## License & credits
 
 This project is developed as part of Asta's project series. Feel free to use and adapt for personal and educational use!
+
+The repository does not currently include a standalone license file. Third-party libraries retain their own licenses.
 
 ---
 
 <p align="center">
-  Made with ❤️ & 🍒 by Asta
+  <strong>Made with ❤️ &amp; 🍒 by Asta</strong><br />
+  <sub>Part of the CherryApp family.</sub>
 </p>
