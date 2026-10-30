@@ -9,6 +9,10 @@
     <img src="https://img.shields.io/badge/built_with-Kotlin_%26_Compose-78616B?style=flat-square" alt="Built with Kotlin and Jetpack Compose" />
   </p>
   <p>
+    <a href="https://github.com/asta-JC/Cherry-MusicPlayer/releases/download/v1.1/Cherry-MusicPlayer_v1.1.apk"><strong>Download APK · v1.1</strong></a> ·
+    <a href="https://github.com/asta-JC/Cherry-MusicPlayer/releases/tag/v1.1">Release notes</a>
+  </p>
+  <p>
     <a href="#screenshots">Screenshots</a> ·
     <a href="#features">Features</a> ·
     <a href="#getting-started">Get started</a> ·
@@ -58,6 +62,12 @@ All three screenshots were captured in Light mode from v1.1 on a physical Samsun
 This is a local-file player; streaming and music downloads are not included. Equalizer preset selection is currently a saved preference and does not apply audio effects. The sleep timer belongs to the running app session.
 
 ## Getting started
+
+### Download
+
+Install [Cherry-MusicPlayer_v1.1.apk](https://github.com/asta-JC/Cherry-MusicPlayer/releases/download/v1.1/Cherry-MusicPlayer_v1.1.apk) from [GitHub Releases](https://github.com/asta-JC/Cherry-MusicPlayer/releases/tag/v1.1).
+
+This APK is **debug/test-signed** with the existing development certificate, verified against the previous phone installation. A [SHA-256 checksum file](https://github.com/asta-JC/Cherry-MusicPlayer/releases/download/v1.1/Cherry-MusicPlayer_v1.1.apk.sha256) is included with the release.
 
 ### Requirements
 
